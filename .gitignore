@@ -1,1 +1,3 @@
-*.exe
+NCHU-CSE-DataStructure/*/*.exe
+
+Pointer_And_Memory/*.exe
