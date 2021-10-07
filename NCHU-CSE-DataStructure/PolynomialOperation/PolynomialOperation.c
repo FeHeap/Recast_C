@@ -3,6 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#define inputBufferSize 100
+
 typedef struct polynomial polynomial;
 struct polynomial {
 	int coefficient;
@@ -13,20 +15,21 @@ struct polynomial {
 polynomial* inputPolynomial(char*);
 int isValid(char*);
 int isExit(char*);
-int getOperationType(char*);
-int inputOperationSymbol(char*);
-polynomial* operation(int, polynomial*, polynomial*);
+char getOperationType(char*);
+char inputOperationSymbol(char*);
+polynomial* operation(char, polynomial*, polynomial*);
 polynomial* addition(polynomial*, polynomial*);
 polynomial* subtraction(polynomial*, polynomial*);
 polynomial* multiplication(polynomial*, polynomial*);
 polynomial* stringToPolynomial(char*);
+void push(polynomial* , int, int);
 char* polynomialToString(polynomial*);
 
 int main() {
 	printf("Input polynomials and operation symbol('*'¡B'-'¡B'+')\n");
 	polynomial *p1 = inputPolynomial("Polynomial 1:");
 	polynomial *p2 = inputPolynomial("Polynomial 2:");
-	int operationSymbol = inputOperationSymbol("Operation Symbol:");
+	char operationSymbol = inputOperationSymbol("Operation Symbol:");
 	polynomial* ans = operation(operationSymbol, p1, p2);
 	printf("Ans: %s\n", polynomialToString(ans));
 	
@@ -35,7 +38,7 @@ int main() {
 }
 
 polynomial* inputPolynomial(char* hint) {
-	char input[100];
+	char input[inputBufferSize];
 	do {
 		printf("%s", hint);
 		gets(input);
@@ -47,7 +50,6 @@ polynomial* inputPolynomial(char* hint) {
 	
 	return stringToPolynomial(input);
 }
-
 
 enum state {
 	start,
@@ -66,7 +68,7 @@ int isValid(char* polynomialStr) {
 	char charBuff;
 	point = start;
 	for(i = 0; i < len; i++) {
-		if(polynomialStr[i] == ' ') {
+		if(isspace(polynomialStr[i])) {
 			continue;
 		}
 		
@@ -170,7 +172,7 @@ int isExit(char* str) {
 	int len = strlen(str);
 	int i;
 	for(i = 0; i < len; i++) {
-		if(str[i] == ' ' || str[i] == '\t') {
+		if(isspace(str[i])) {
 			continue;
 		}
 		
@@ -192,15 +194,59 @@ int isExit(char* str) {
 	return flag;
 }
 
-int inputOperationSymbol(char* hint) {
-	return 0;
+char inputOperationSymbol(char* hint) {
+	char input[inputBufferSize];
+	char operationType;
+	do {
+		printf("%s", hint);
+		gets(input);
+		if(isExit(input)) {
+			printf("bye~\n");
+			exit(0);
+		}
+	}while(!(operationType = getOperationType(input)));
+	
+	return operationType;
 }
 
-int getOperationType(char* hint) {
-	return 0;
+char getOperationType(char* str) {
+	
+	int len = strlen(str);
+	char operationType = 0;
+	int i;
+	for(i = 0; i < len; i++) {
+		if(isspace(str[i])) {
+			continue;
+		}
+		
+		if(operationType == 0) {
+			operationType = 1;
+			if(str[i] == '+') {
+				operationType = '+';
+			}
+			else if(str[i] == '-') {
+				operationType = '-';
+			}
+			else if(str[i] == '*') {
+				operationType = '*';
+			}
+			else {
+				operationType = 0;
+				break;
+			}
+		}
+		else{
+			operationType = 0;
+			break;
+		}
+	}
+	
+	return operationType;
 }
 
-polynomial* operation(int operationType, polynomial* p1, polynomial* p2) {
+polynomial* operation(char operationType, polynomial* p1, polynomial* p2) {
+	
+	
 	return p1;
 }
 
@@ -217,8 +263,38 @@ polynomial* multiplication(polynomial* p1, polynomial* p2) {
 }
 
 polynomial* stringToPolynomial(char* polynomialStr) {
+	polynomial *top = NULL;
 	
-	return ;
+	char signOfCoef = 1;
+	int coefficient;
+	int exponent;
+	char charBuff;
+	int i;
+	for(i = 0; i < len; i++) {
+		if(isspace(polynomialStr[i])) {
+			continue;
+		}
+		charBuff = polynomialStr[i];
+		
+		if(charBuff == '+') {
+			signOfCoef = 1;
+		}
+		else if(charBuff == '-') {
+			signOfCoef = -1;
+		}
+	}
+	
+	push(top, coefficient, exponent);
+	
+	return top;
+}
+
+void push(polynomial* top, int coefficient, int exponent) {
+	polynomial *temp = (polynomial*)malloc(sizeof(polynomial));
+	temp->coefficient = coefficient;
+	temp->exponent = exponent;
+	temp->next = top;
+	top = temp;
 }
 
 char* polynomialToString(polynomial* p) {
