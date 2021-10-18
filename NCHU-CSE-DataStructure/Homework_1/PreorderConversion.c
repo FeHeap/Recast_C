@@ -1,24 +1,42 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
+
 #define INPUT_FILE "input_1.txt"
 #define OUTPUT_FILE "output_1.txt"
 #define TRUE 1
 #define FALSE 0
-typedef char bool;
+#define byte char
+
+#define safeFree(p) saferFree((void**)&(p))
+
 
 
 FILE *fin, *fout;
 
-typedef struct node {
-	char value[30];
-	struct node *left;
-	struct node *right;
-} Node;
+typedef char bool;
 
-Node* buildTree(char*);
 
+typedef struct unit {
+	enum unitType {
+		type_num,
+		type_operate,
+		type_open,
+		type_close,
+		type_head,
+	} type;
+	char *content;
+	struct unit *next;
+} Unit;
+
+void saferFree(void**);
+Unit* structUpFormula(const char*);
+Unit* initHeadUnit();
+void pushFormulaStruct(Unit**, const char*);
 char* preorderConverse(char*, int*, int);
+bool isOperator(char);
+byte getOperatorPriority(char);
 
 int main() {
 		
@@ -39,19 +57,37 @@ int main() {
 //	fout = fopen(OUTPUT_FILE, "w");
 	
 	
-	
 	char FormulaBuff[101];
 	char lnBuff;
-	
-
-	fscanf(fin, "%[^\n]", FormulaBuff);
-	lnBuff = fgetc(fin);	// \n
-	int start = 0;
-	char *outcome = buildTree(FormulaBuff);
-	printf("main\n");	
-	printf("main:%s\n", outcome);
-	free(outcome);
-	outcome = NULL;
+	size_t lines = 0;
+	do {
+		fscanf(fin, "%[^\n]", FormulaBuff);
+		lnBuff = fgetc(fin);	// \n
+		lines++;	
+	} while(lnBuff != EOF);
+	lines -= 2;
+	rewind(fin);
+	int i;
+	for(i = 0; i < lines; i++) {
+		fscanf(fin, "%[^\n]", FormulaBuff);
+		lnBuff = fgetc(fin);	// \n
+		Unit *Head = structUpFormula(FormulaBuff);
+		while(Head != NULL) {
+			Unit *temp = Head;
+			Head = Head->next;
+			if(temp->type == type_operate)
+				printf("%c", temp->content[0]);
+			else if(temp->type == type_num)
+				printf("%s", temp->content);
+			else if(temp->type == type_open)
+				printf("(");
+			else if(temp->type == type_close)
+				printf(")");
+			safeFree(temp->content);
+			safeFree(temp);
+		}
+		printf("\n");
+	}
 	
 //	fscanf(fin, "%[^\n]", FormulaBuff);
 //	lnBuff = fgetc(fin);	// \n
@@ -69,30 +105,135 @@ int main() {
 	return 0;
 }
 
+void saferFree(void **pp){
+	//printf("SAFER FREE\n");
+	if(pp != NULL && *pp != NULL){
+		free(*pp);
+		*pp = NULL;
+	}
+}
+
 enum state {
-	openParenthesis,	//0
-	closeParenthesis,	//1
-	num,				//2
-	operate,			//3
-	end,				//4
+	init,		// 0
+	open,		// 1
+	num,		// 2
+	operate,	// 3
+	close,		// 4
+	end,		// 5
 };
 
-enum operatorPriority {
-	first = 4,	// * % /	
-	second = 3,	// + -
-	third = 2,	// > <
-	fourth = 1,	// & ^ |
-	fifth = 0,	// nothing
-};
+Unit* structUpFormula(const char *Formula) {
+	
+	Unit *head = initHeadUnit();
+	size_t length = strlen(Formula);
+	char numBuff[101];
+	char operateBuff[2];
+	operateBuff[1] = '\0';
+	enum state point = init;
+	int i, j;
+	for(i = 0; i < length; i++) {
+		// NFA_PreorderConversion_rough
+		switch(point) {
+			case num:
+				for(j = 0; TRUE; i++) {
+					numBuff[j++] = Formula[i];
+					if(!isalnum(Formula[i+1]) && Formula[i+1] != '.') {
+						break;
+					}
+				}
+				numBuff[j] = '\0';
+				pushFormulaStruct(&head, numBuff);
+				if(Formula[i+1] == ')') {
+					point = close;
+				}
+				else if(Formula[i+1] == '\0') {
+					point = end;
+				}
+				else { // Formula[i+1] is operator
+					point = operate;
+				}
+				break;
+				
+			case operate:
+				operateBuff[0] = Formula[i];
+				pushFormulaStruct(&head, operateBuff);
+				if(isalnum(Formula[i+1]) || Formula[i+1] == '-') {
+					point = num;
+				}
+				else {	// Formula[i+1] == '('
+					point = open;
+				}
+				break;
+				
+			case open:
+				pushFormulaStruct(&head, "(");
+				if(isalnum(Formula[i+1]) || Formula[i+1] == '-'){
+					point = num;
+				}
+				break;
+				
+			case close:
+				pushFormulaStruct(&head, ")");
+				if(Formula[i+1] == '\0') {
+					point = end;
+				}
+				else if(Formula[i+1] != ')'){ // Formula[i+1] is operator
+					point = operate;
+				}
+				break;
+				
+			case init:
+				point = (isalnum(Formula[i]) || Formula[i] == '-')? num : open;
+				i--; 
+				break;
+				
+			default:
+				// pass
+				break;
+		}
+	}
+	
+	return head;
+}
 
-bool isOperator(char);
-bool isOpenParenthesis(char);
-bool isCloseParenthesis(char);
-int getOperatorPriority(char);
+Unit* initHeadUnit() {
+	
+	Unit *head  = (Unit*)malloc(sizeof(Unit));
+	head->content = NULL;
+	head->type = type_head;
+	head->next = NULL;
+	
+	return head;
+}
 
-
-
-
+void pushFormulaStruct(Unit **top, const char *content) {
+	
+	Unit *temp = (Unit*)malloc(sizeof(Unit));
+	
+	if(strlen(content) == 1 && !isalnum(content[0])) {
+		if(content[0] == '(') {
+			temp->type = type_open;
+			temp->content = NULL;
+		}
+		else if(content[0] == ')') {
+			temp->type = type_close;
+			temp->content = NULL;
+		}
+		else {
+			temp->type = type_operate;
+			temp->content = (char*)malloc(sizeof(char));
+			temp->content[0] = content[0];
+		}
+	}
+	else {
+		temp->type = type_num;
+		temp->content = (char*)malloc((strlen(content) + 1) * sizeof(char));
+		strcpy(temp->content, content);
+	}
+	
+	temp->next = *top;
+	*top = temp;
+}
 
 bool isOperator(char character) {
 	
@@ -118,43 +259,36 @@ bool isOperator(char character) {
 	return result;
 }
 
-bool isOpenParenthesis(char character) {
-	return (character == '(')? TRUE : FALSE;
-}
 
-bool isCloseParenthesis(char character) {
-	return (character == ')' || character == '\0')? TRUE : FALSE;
-}
-
-int getOperatorPriority(char Operator) {
+byte getOperatorWeight(char Operator) {
 	
-	enum operatorPriority priority;
+	byte priority;
 	
 	switch(Operator) {
 		case '*':
 		case '/':
 		case '%':
-			priority = first;
+			priority = 0;
 			break;
 			
 		case '+':
 		case '-':
-			priority = second;
+			priority = 1;
 			break;
 			
 		case '>':
 		case '<':
-			priority = third;
+			priority = 2;
 			break;
 			
 		case '&':
 		case '^':
 		case '|':
-			priority = fourth;
+			priority = 3;
 			break;
 			
 		default:
-			priority = fifth;
+			//pass
 			break;
 	}
 	
