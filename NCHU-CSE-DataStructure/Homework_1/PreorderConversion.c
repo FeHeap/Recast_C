@@ -6,14 +6,11 @@
 #define INPUT_FILE "input_1.txt"
 #define OUTPUT_FILE "output_1.txt"
 #define TRUE 1
-#define FALSE 0
 #define byte char
 
 #define safeFree(p) saferFree((void**)&(p))
 
 FILE *fin, *fout;
-
-typedef char bool;
 
 typedef struct unit {
 	enum unitType {
@@ -26,17 +23,16 @@ typedef struct unit {
 	struct unit *next;
 } Unit;
 
-
 void saferFree(void**);
 Unit* structUpFormula(const char*);
 void pushFormulaStruct(Unit**, const char*);
 Unit* popFormulaStruct(Unit**);
-bool isOperator(char);
-byte getOperatorPriority(char);
 void PreorderConverse(Unit**);
+byte getOperatorWeight(char);
 
+
+/* Main Program */
 int main() {
-	
 	
 	// output file opened with mode "w"
 	if(!((fout = fopen(OUTPUT_FILE, "r")) == NULL)) {
@@ -58,8 +54,11 @@ int main() {
 		printf("Fail to open file %s!", INPUT_FILE);
 		exit(EXIT_FAILURE);
 	}
+	
+	// output file opened with mode "w"
 	fout = fopen(OUTPUT_FILE, "w");
 	
+	// declare buffers
 	char FormulaBuff[101];
 	char lnBuff;
 	
@@ -67,58 +66,74 @@ int main() {
 	size_t lines = 0;
 	do {
 		fscanf(fin, "%[^\n]", FormulaBuff);
-		lnBuff = fgetc(fin);	// \n
+		lnBuff = fgetc(fin);	// buff '\n'
 		lines++;	
 	} while(lnBuff != EOF);
 	lines -= 2;
 	rewind(fin);
 	
+	
+	
+	// read the formulas in INPUT_FILE, and write the preorder of formulas in OUTPUT_FILE
+	printf("Comversing inorder formulas into preorder...\n");
 	int i;
 	for(i = 0; i < lines; i++) {
+		// read the formula in INPUT_FILE, and store it into FormulaBuff
 		fscanf(fin, "%[^\n]", FormulaBuff);
-		lnBuff = fgetc(fin);	// \n
+		lnBuff = fgetc(fin);	// buff '\n'
+		
+		// converse the data in FormulaBuff to linked list(stack, head point to the top of stack)
 		Unit *Head = structUpFormula(FormulaBuff);
+		
+		// converse inorder formula stored in the linked list to preorder formula
 		PreorderConverse(&Head);
 		
-		Unit *temp = Head;
+		// write the preorder formula into OUTPUT_FILE
+		Unit *tempUnit = Head;
 		Head = Head->next;
-		if(temp->type == type_operate)
-			fprintf(fout, "%c", temp->content[0]);
-		else if(temp->type == type_num)
-			fprintf(fout, "%s", temp->content);
-		safeFree(temp->content);
-		safeFree(temp);
+		if(tempUnit->type == type_operate) {
+			fprintf(fout, "%c", tempUnit->content[0]); 
+		}
+		else {	// if(tempUnit->type == type_num)
+			fprintf(fout, "%s", tempUnit->content);
+		}
+		safeFree(tempUnit->content);
+		safeFree(tempUnit);
 		while(Head != NULL) {
-			Unit *temp = Head;
+			Unit *tempUnit = Head;
 			Head = Head->next;
-			if(temp->type == type_operate)
-				fprintf(fout, " %c", temp->content[0]);
-			else if(temp->type == type_num)
-				fprintf(fout, " %s", temp->content);
-			safeFree(temp->content);
-			safeFree(temp);
+			if(tempUnit->type == type_operate) {
+				fprintf(fout, " %c", tempUnit->content[0]); 
+			}
+			else {	// if(tempUnit->type == type_num)
+				fprintf(fout, " %s", tempUnit->content);
+			}
+			safeFree(tempUnit->content);
+			safeFree(tempUnit);
 		}
 		fprintf(fout, "\n");
 	}
 	fprintf(fout, "\n\n");
 	
+	
 	// close files
 	fclose(fin);
 	fclose(fout);
 	
+	printf("Successful conversion and store the outcome into %s\n", OUTPUT_FILE);
 	
 	system("PAUSE");
 	return 0;
 }
 
+
 void saferFree(void **pp){
-	//printf("SAFER FREE\n");
+	// printf("SAFER FREE\n");
 	if(pp != NULL && *pp != NULL){
 		free(*pp);
 		*pp = NULL;
 	}
 }
-
 
 // states of NFA_PreorderConversion_rough
 enum state {
@@ -132,15 +147,17 @@ enum state {
 
 Unit* structUpFormula(const char *Formula) {
 	
-	Unit *head = NULL;
 	size_t length = strlen(Formula);
+	
+	// declare buffers
 	char numBuff[101];
-	char operateBuff[2];
-	operateBuff[1] = '\0';
-	enum state point = init;
+	char operateBuff[2] = {'\0', '\0'};
+	
+	// build the linked list to store Formula by NFA_PreorderConversion_rough
+	Unit *head = NULL;
+	enum state point = init;	// point to the start state
 	int i, j;
 	for(i = 0; i < length; i++) {
-		// NFA_PreorderConversion_rough
 		switch(point) {
 			case num:
 				// task
@@ -216,158 +233,134 @@ Unit* structUpFormula(const char *Formula) {
 	return head;
 }
 
-
 void pushFormulaStruct(Unit **top, const char *content) {
 	
-	Unit *temp = (Unit*)malloc(sizeof(Unit));
+	Unit *tempUnit = (Unit*)malloc(sizeof(Unit));
 	
 	if(strlen(content) == 1 && !isalnum(content[0])) {
 		if(content[0] == '(') {
-			temp->type = type_open;
-			temp->content = NULL;
+			tempUnit->type = type_open;
+			tempUnit->content = NULL;
 		}
 		else if(content[0] == ')') {
-			temp->type = type_close;
-			temp->content = NULL;
+			tempUnit->type = type_close;
+			tempUnit->content = NULL;
 		}
 		else {
-			temp->type = type_operate;
-			temp->content = (char*)malloc(sizeof(char));
-			temp->content[0] = content[0];
+			tempUnit->type = type_operate;
+			tempUnit->content = (char*)malloc(sizeof(char));
+			tempUnit->content[0] = content[0];
 		}
 	}
 	else {
-		temp->type = type_num;
-		temp->content = (char*)malloc((strlen(content) + 1) * sizeof(char));
-		strcpy(temp->content, content);
+		tempUnit->type = type_num;
+		tempUnit->content = (char*)malloc((strlen(content) + 1) * sizeof(char));
+		strcpy(tempUnit->content, content);
 	}
 	
-	temp->next = *top;
-	*top = temp;
+	tempUnit->next = *top;
+	*top = tempUnit;
 }
 
 Unit* popFormulaStruct(Unit **top) {
-	Unit *temp = *top;
+	Unit *tempUnit = *top;
 	*top = (*top)->next;
-	return temp;
+	return tempUnit;
 }
 
-bool isOperator(char character) {
+void PreorderConverse(Unit** formulaHead) {
 	
-	bool result;
-	switch(character) {
-		case '*':
-		case '/':
-		case '%':
-		case '+':
-		case '-':
-		case '>':
-		case '<':
-		case '&':
-		case '^':
-		case '|':
-			result = TRUE;
-			break;
-		default:
-			result = FALSE;
-			break;
+	Unit *preorderFormula = NULL;
+	Unit *symbolStackTop = NULL;
+	Unit *UnitBuff = NULL;
+	Unit *tempUnit = NULL;
+	
+	while(*formulaHead != NULL) {
+		// get the top of *formulaHead
+		UnitBuff = popFormulaStruct(formulaHead);
+	
+		// process the UnitBuff
+		if(UnitBuff->type == type_num) {
+			UnitBuff->next = preorderFormula;
+			preorderFormula = UnitBuff;
+		}
+		else if(UnitBuff->type == type_operate) {
+			if(symbolStackTop != NULL && symbolStackTop->type != type_close) {
+				// modify the symbolStackTop by the weight of operators
+				while(getOperatorWeight(UnitBuff->content[0]) > getOperatorWeight(symbolStackTop->content[0])) {
+					tempUnit = symbolStackTop;
+					symbolStackTop = symbolStackTop->next;
+					tempUnit->next = preorderFormula;
+					preorderFormula = tempUnit;
+					if(symbolStackTop == NULL || symbolStackTop->type == type_close) {
+						break;
+					}
+				}
+			}
+			UnitBuff->next = symbolStackTop;
+			symbolStackTop = UnitBuff;
+		}
+		else if(UnitBuff->type == type_close) {
+			UnitBuff->next = symbolStackTop;
+			symbolStackTop = UnitBuff;
+		}
+		else {	// if(UnitBuff->type == type_open)
+			safeFree(UnitBuff);	// free open paren
+			while(symbolStackTop->type != type_close) {
+				tempUnit = symbolStackTop;
+				symbolStackTop = symbolStackTop->next;
+				tempUnit->next = preorderFormula;
+				preorderFormula = tempUnit;
+			}
+			UnitBuff = symbolStackTop;
+			symbolStackTop = symbolStackTop->next;
+			safeFree(UnitBuff);	// free close paren
+		}
 	}
 	
-	return result;
+	// pop the remaining elements in symbolStackTop, and push it into preorderFormula
+	while(symbolStackTop != NULL) {
+		Unit *tempUnit = symbolStackTop;
+		symbolStackTop = symbolStackTop->next;
+		tempUnit->next = preorderFormula;
+		preorderFormula = tempUnit;
+	}
+	
+	// point *formulaHead to preorderFormula
+	*formulaHead = preorderFormula;
 }
-
 
 byte getOperatorWeight(char Operator) {
 	
-	byte priority;
+	byte weight;
 	
 	switch(Operator) {
 		case '*':
 		case '/':
 		case '%':
-			priority = 0;
+			weight = 0;
 			break;
 			
 		case '+':
 		case '-':
-			priority = 1;
+			weight = 1;
 			break;
 			
 		case '>':
 		case '<':
-			priority = 2;
+			weight = 2;
 			break;
 			
 		case '&':
 		case '^':
 		case '|':
-			priority = 3;
+			weight = 3;
 			break;
 			
 		default: //pass
 			break;
 	}
 	
-	return priority;
+	return weight;
 }
 
-
-void PreorderConverse(Unit** formulaHead) {
-	Unit *preorderFormula = NULL;
-	Unit *symbolStackTop = NULL;
-	
-	
-	while(*formulaHead != NULL) {
-		Unit *tempUnit = popFormulaStruct(formulaHead);
-		if(tempUnit->type == type_operate || tempUnit->type == type_open || tempUnit->type == type_close) {
-			if(tempUnit->type == type_operate) {
-				if(symbolStackTop != NULL && symbolStackTop->type != type_close) {
-					while(getOperatorWeight(tempUnit->content[0]) > getOperatorWeight(symbolStackTop->content[0])) {
-						Unit *temp = symbolStackTop;
-						symbolStackTop = symbolStackTop->next;
-						temp->next = preorderFormula;
-						preorderFormula = temp;
-						if(symbolStackTop == NULL || symbolStackTop->type == type_close) {
-							break;
-						}
-					}
-					tempUnit->next = symbolStackTop;
-					symbolStackTop = tempUnit;
-				}
-				else {
-					tempUnit->next = symbolStackTop;
-					symbolStackTop = tempUnit;
-				}
-			}
-			else if(tempUnit->type == type_close) {
-					tempUnit->next = symbolStackTop;
-					symbolStackTop = tempUnit;
-			}
-			else {
-				safeFree(tempUnit);
-				while(symbolStackTop->type != type_close) {
-					Unit *temp = symbolStackTop;
-					symbolStackTop = symbolStackTop->next;
-					temp->next = preorderFormula;
-					preorderFormula = temp;
-				}
-				tempUnit = symbolStackTop;
-				symbolStackTop = symbolStackTop->next;
-				safeFree(tempUnit);
-			}
-		}
-		else {	// tempUnit->type == type_num
-			tempUnit->next = preorderFormula;
-			preorderFormula = tempUnit;
-		}
-	}
-	
-	while(symbolStackTop != NULL) {
-		Unit *temp = symbolStackTop;
-		symbolStackTop = symbolStackTop->next;
-		temp->next = preorderFormula;
-		preorderFormula = temp;
-	}
-	
-	*formulaHead = preorderFormula;
-}
