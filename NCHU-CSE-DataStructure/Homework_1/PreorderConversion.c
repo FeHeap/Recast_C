@@ -34,7 +34,7 @@ byte getOperatorWeight(char);
 /* Main Program */
 int main() {
 	
-	// output file opened with mode "w"
+	// detect whether OUTPUT_FILE has already existed
 	if(!((fout = fopen(OUTPUT_FILE, "r")) == NULL)) {
 		fclose(fin);
 		printf("File %s has already existed! Overwrite?[Y/n] ", OUTPUT_FILE);
