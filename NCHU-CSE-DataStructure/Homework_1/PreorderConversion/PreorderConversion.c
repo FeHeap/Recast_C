@@ -31,7 +31,7 @@ void PreorderConverse(Unit**);
 byte getOperatorWeight(char);
 
 
-/* Main Program */
+/* Main Function */
 int main() {
 	
 	// detect whether OUTPUT_FILE has already existed
@@ -72,10 +72,9 @@ int main() {
 	lines -= 2;
 	rewind(fin);
 	
-	
+	printf("Comversing inorder formulas to preorder...\n");
 	
 	// read the formulas in INPUT_FILE, and write the preorder of formulas in OUTPUT_FILE
-	printf("Comversing inorder formulas into preorder...\n");
 	int i;
 	for(i = 0; i < lines; i++) {
 		// read the formula in INPUT_FILE, and store it into FormulaBuff
