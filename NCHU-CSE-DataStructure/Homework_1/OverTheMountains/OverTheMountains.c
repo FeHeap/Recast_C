@@ -10,7 +10,6 @@
 
 #define safeFree(p) saferFree((void**)&(p))
 
-
 FILE *fin, *fout;
 
 typedef struct mountain {
@@ -37,6 +36,7 @@ typedef struct queueUnit {
 	short weight;
 	short YX[2];
 } QueueUnit;
+void swapQueueUnit(QueueUnit*, QueueUnit*);
 
 typedef struct bfsMapUnit {
 	byte isDestination;
@@ -153,11 +153,12 @@ int main() {
 
 		setMapRouteCost(aMap);
 		
-		
+		printf("----------\n");
 		
 		for(j = 0; j < edge; j++) {
 			safeFree(*(aMap->terrainMap+j));
 		}
+		safeFree(aMap->terrainMap);
 		safeFree(aMap);
 	}
 	
@@ -222,6 +223,7 @@ Map* createMap(short destinationNum, short edge, short *startAddress, short (*de
 
 	for(i = 0; i < edge; i++) {
 		for(j = 0; j < edge; j++) {
+			//printf("Y: %d X: %d    ", i, j);
 			for(compassPoint = 0; compassPoint < 8; compassPoint++) {
 				directY = compass[compassPoint][0] + i;	// directY buffer the Y coordinate of the position detected
 				directX = compass[compassPoint][1] + j;	// directX buffer the X coordinate of the position detected
@@ -231,7 +233,9 @@ Map* createMap(short destinationNum, short edge, short *startAddress, short (*de
 				else {
 					(*(terrainMap+i)+j)->cost[compassPoint] = abs(initialMapData[i][j] - initialMapData[directY][directX]);
 				}
-			}	
+				//printf("%d ", (*(terrainMap+i)+j)->cost[compassPoint]);
+			}
+			//printf("\n");
 		}	
 	}
 	
@@ -241,14 +245,16 @@ Map* createMap(short destinationNum, short edge, short *startAddress, short (*de
 }
 
 void setMapRouteCost(Map *map) {
-	QueueUnit *priorityQueue = (QueueUnit*)malloc(4 * map->edge * sizeof(QueueUnit) + 1);
+	QueueUnit *priorityQueue = (QueueUnit*)malloc((16 * map->edge + 1) * sizeof(QueueUnit));
 	priorityQueue[0].weight = -1;
+	priorityQueue[0].YX[0] = -1;
+	priorityQueue[0].YX[1] = -1;
 	short top;
 	
 	short specialPoint[6][2];
 	specialPoint[0][0] = map->startAddress[0];
 	specialPoint[0][1] = map->startAddress[1];
-	short i, j;
+	short i, j, k;
 	for(i = 1; i <= map->destinationNum; i++) {
 		specialPoint[i][0] = map->destination[i-1][0];
 		specialPoint[i][1] = map->destination[i-1][1];
@@ -260,16 +266,20 @@ void setMapRouteCost(Map *map) {
 	}
 	for(i = 0; i < map->edge; i++) {
 		for(j = 0; j < map->edge; j++) {
-			BFSMap[i][j].havePassed = 0;
-			BFSMap[i][j].isDestination = 0;
+			BFSMap[i][j].isDestination = FALSE;
 		}
 	}
 	for(i = 1; i <= map->destinationNum; i++) {
-		BFSMap[specialPoint[i][0]][specialPoint[i][1]].isDestination = 1;
+		BFSMap[specialPoint[i][0]][specialPoint[i][1]].isDestination = TRUE;
 	}
 	
 	for(i = 0; i < map->destinationNum; i++) {
-		BFSMap[specialPoint[i][0]][specialPoint[i][1]].isDestination = 0;
+		for(j = 0; j < map->edge; j++) {
+			for(k = 0; k < map->edge; k++) {
+				BFSMap[j][k].havePassed = FALSE;
+			}
+		}
+		BFSMap[specialPoint[i][0]][specialPoint[i][1]].isDestination = FALSE;
 		top = 1;
 		QueueUnit *noteLeft, *noteRight;
 		
@@ -277,16 +287,21 @@ void setMapRouteCost(Map *map) {
 		priorityQueue[top].YX[0] = specialPoint[i][0];
 		priorityQueue[top++].YX[1] = specialPoint[i][1];
 		short specialPointNum = map->destinationNum-i;
-			
+		printf("===i: %hd===\n", i);
 		while(top != 1)	{
-			printf("i\n");
 			QueueUnit now = { priorityQueue[1].weight, {priorityQueue[1].YX[0], priorityQueue[1].YX[1]}};
-			printf("%hd %hd %hd\n", now.weight, now.YX[0], now.YX[1]);
+			printf("%hd %hd %hd top: %hd\n", now.weight, now.YX[0], now.YX[1], top);
 			byte haveAlreadyPassed = FALSE;
 			if(BFSMap[now.YX[0]][now.YX[1]].havePassed == FALSE) {
 				BFSMap[now.YX[0]][now.YX[1]].havePassed = TRUE;
-				if(BFSMap[now.YX[0]][now.YX[1]].isDestination == 1) {
+				if(BFSMap[now.YX[0]][now.YX[1]].isDestination == TRUE) {
 					specialPointNum--;
+					for(j = i+1; j <= map->destinationNum; j++) {
+						if(specialPoint[j][0] == now.YX[0] && specialPoint[j][1] == now.YX[1])
+							break;
+					}
+					map->routeCost[i][j] = now.weight;
+					printf("^-----HERE\n");
 				}
 				if(specialPointNum == 0) {
 					break;
@@ -305,15 +320,11 @@ void setMapRouteCost(Map *map) {
 					if(priorityQueue[sinkDown].weight > noteLeft->weight || priorityQueue[sinkDown].weight > noteRight->weight) {
 						
 						if(noteLeft->weight <= noteRight->weight) {
-							QueueUnit temp = priorityQueue[sinkDown];
-							priorityQueue[sinkDown] = *noteLeft;
-							*noteLeft = temp;
+							swapQueueUnit((priorityQueue + sinkDown), noteLeft);
 							sinkDown = 2*sinkDown;
 						}
 						else {
-							QueueUnit temp = priorityQueue[sinkDown];
-							priorityQueue[sinkDown] = *noteRight;
-							*noteRight = temp;
+							swapQueueUnit((priorityQueue + sinkDown), noteRight);
 							sinkDown = 2*sinkDown + 1;
 						}
 						
@@ -324,9 +335,7 @@ void setMapRouteCost(Map *map) {
 				}
 				else if(2*sinkDown < top) {
 					noteLeft = &priorityQueue[2*sinkDown];
-					QueueUnit temp = priorityQueue[sinkDown];
-					priorityQueue[sinkDown] = *noteLeft;
-					*noteLeft = temp;
+					swapQueueUnit((priorityQueue + sinkDown), noteLeft);
 					sinkDown = 2*sinkDown;
 				}
 				else {
@@ -338,14 +347,13 @@ void setMapRouteCost(Map *map) {
 				continue;
 			}
 			
-			
 			for(compassPoint = 0; compassPoint < 8; compassPoint++) {
-				directY = compass[compassPoint][0] + now.YX[0];	// directY buffer the Y coordinate of the position detected
-				directX = compass[compassPoint][1] + now.YX[1];	// directX buffer the X coordinate of the position detected
-				if(directY < 0 || directX < 0 || directY == map->edge || directX == map->edge) { // if out of boundary, continue
+				if(map->terrainMap[now.YX[0]][now.YX[1]].cost[compassPoint] == -1) { // if out of boundary, continue
 					//pass
 				}
 				else {
+					directY = compass[compassPoint][0] + now.YX[0];	// directY buffer the Y coordinate of the position detected
+					directX = compass[compassPoint][1] + now.YX[1];	// directX buffer the X coordinate of the position detected
 					if(!BFSMap[directY][directX].havePassed){
 						short floatUp = top;
 						priorityQueue[top].weight = now.weight + map->terrainMap[now.YX[0]][now.YX[1]].cost[compassPoint];
@@ -353,9 +361,7 @@ void setMapRouteCost(Map *map) {
 						priorityQueue[top++].YX[1] = directX;
 						while(floatUp != 1) {
 							if(priorityQueue[floatUp].weight < priorityQueue[floatUp/2].weight) {
-								QueueUnit temp = priorityQueue[floatUp];
-								priorityQueue[floatUp] = priorityQueue[floatUp/2];
-								priorityQueue[floatUp/2] = temp;
+								swapQueueUnit((priorityQueue + floatUp), (priorityQueue + floatUp/2));
 								floatUp /= 2;
 							}
 							else {
@@ -369,11 +375,30 @@ void setMapRouteCost(Map *map) {
 		}
 	}
 	
+	printf("=======\n");
+	for(i = 0; i <= map->destinationNum; i++) {
+		for(j = 0; j <= map->destinationNum; j++) {
+			printf("%hd ", map->routeCost[i][j]);
+		}
+		printf("\n");
+	}
+	printf("=======\n");
 	
+//	printf("RR\n");
+//	for(i = 0; i < 4 * map->edge + 1; i++) {
+//		printf("%d weight: %hd, (%hd, %hd)\n", i, priorityQueue->weight, priorityQueue->YX[0], priorityQueue->YX[1]);
+//	}
 	safeFree(priorityQueue);
-	
+//	printf("RR\n");
 	for(i = 0; i < map->edge; i++) {
 		safeFree(*(BFSMap+i));
 	}
 	safeFree(BFSMap);
 }
+
+void swapQueueUnit(QueueUnit *A, QueueUnit *B) {
+	QueueUnit temp = *A;
+	*A = *B;
+	*B = temp;
+}
+
