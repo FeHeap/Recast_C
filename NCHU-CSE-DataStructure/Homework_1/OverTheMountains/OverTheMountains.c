@@ -285,16 +285,15 @@ void setMapRouteCost(Map *map) {
 			byte haveAlreadyPassed = FALSE;
 			if(BFSMap[now.YX[0]][now.YX[1]].havePassed == FALSE) {
 				BFSMap[now.YX[0]][now.YX[1]].havePassed = TRUE;
+				if(BFSMap[now.YX[0]][now.YX[1]].isDestination == 1) {
+					specialPointNum--;
+				}
+				if(specialPointNum == 0) {
+					break;
+				}
 			}
 			else {
 				haveAlreadyPassed = TRUE;
-			}
-			
-			if(BFSMap[now.YX[0]][now.YX[1]].isDestination == 1) {
-				specialPointNum--;
-			}
-			if(specialPointNum == 0) {
-				break;
 			}
 			
 			priorityQueue[1] = priorityQueue[--top];
@@ -305,7 +304,7 @@ void setMapRouteCost(Map *map) {
 					noteRight = &priorityQueue[2*sinkDown+1];
 					if(priorityQueue[sinkDown].weight > noteLeft->weight || priorityQueue[sinkDown].weight > noteRight->weight) {
 						
-						if(noteLeft->weight >= noteRight->weight) {
+						if(noteLeft->weight <= noteRight->weight) {
 							QueueUnit temp = priorityQueue[sinkDown];
 							priorityQueue[sinkDown] = *noteLeft;
 							*noteLeft = temp;
@@ -334,6 +333,7 @@ void setMapRouteCost(Map *map) {
 					break;
 				}
 			}
+			
 			if(haveAlreadyPassed) {
 				continue;
 			}
