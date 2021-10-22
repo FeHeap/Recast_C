@@ -5,6 +5,8 @@
 #define INPUT_FILE "input_3.txt"
 #define OUTPUT_FILE "output_4.txt"
 #define byte char
+#define TRUE 1
+#define FALSE 0
 
 #define safeFree(p) saferFree((void**)&(p))
 
@@ -12,9 +14,7 @@
 FILE *fin, *fout;
 
 typedef struct mountain {
-	short height;
-	byte isDestination;
-	int cost[8];
+	short cost[8];
 } Mountain;
 
 
@@ -23,6 +23,7 @@ typedef struct map {
 	short edge;
 	short startAddress[2];
 	short destination[5][2];
+	short routeCost[6][6];	// start: 0, destination: 1, 2, 3, 4, 5
 	Mountain **terrainMap;
 } Map;
 
@@ -31,6 +32,16 @@ void saferFree(void**);
 short** createInitailMap(short);
 Map* createMap(short, short, short*, short(*)[2], short**);
 
+void setMapRouteCost(Map*);
+typedef struct queueUnit {
+	short weight;
+	short YX[2];
+} QueueUnit;
+
+typedef struct bfsMapUnit {
+	byte isDestination;
+	byte havePassed;
+} BFSMapUnit;
 
 // compass to detect 8 directions around
 short compass[8][2] = {{-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1},};
@@ -139,6 +150,8 @@ int main() {
 //				printf("\n");
 //			}
 //		}
+
+		setMapRouteCost(aMap);
 		
 		
 		
@@ -173,10 +186,10 @@ short** createInitailMap(short edge) {
 	
 	short i;
 	
-	short **initialMapData = (byte**)malloc(edge * sizeof(short*));
+	short **initialMapData = (short**)malloc(edge * sizeof(short*));
 	
 	for(i = 0; i < edge; i++) {
-		*(initialMapData+i) = (byte*)malloc(edge * sizeof(short));
+		*(initialMapData+i) = (short*)malloc(edge * sizeof(short));
 	}
 	
 	return initialMapData;
@@ -194,6 +207,12 @@ Map* createMap(short destinationNum, short edge, short *startAddress, short (*de
 	for(i = 0; i < destinationNum; i++) {
 		map->destination[i][0] = destination[i][0];
 		map->destination[i][1] = destination[i][1];
+	}
+	
+	for(i = 0; i <= destinationNum; i++) {
+		for(j = 0; j <= destinationNum; j++) {
+			map->routeCost[i][j] = 0;
+		}
 	}
 	
 	Mountain** terrainMap = (Mountain**)malloc(edge * sizeof(Mountain*));
@@ -219,4 +238,142 @@ Map* createMap(short destinationNum, short edge, short *startAddress, short (*de
 	map->terrainMap = terrainMap;
 	
 	return map;
+}
+
+void setMapRouteCost(Map *map) {
+	QueueUnit *priorityQueue = (QueueUnit*)malloc(4 * map->edge * sizeof(QueueUnit) + 1);
+	priorityQueue[0].weight = -1;
+	short top;
+	
+	short specialPoint[6][2];
+	specialPoint[0][0] = map->startAddress[0];
+	specialPoint[0][1] = map->startAddress[1];
+	short i, j;
+	for(i = 1; i <= map->destinationNum; i++) {
+		specialPoint[i][0] = map->destination[i-1][0];
+		specialPoint[i][1] = map->destination[i-1][1];
+	}
+	
+	BFSMapUnit **BFSMap = (BFSMapUnit**)malloc(map->edge * sizeof(BFSMapUnit*));
+	for(i = 0; i < map->edge; i++) {
+		*(BFSMap+i) = (BFSMapUnit*)malloc(map->edge * sizeof(BFSMapUnit));
+	}
+	for(i = 0; i < map->edge; i++) {
+		for(j = 0; j < map->edge; j++) {
+			BFSMap[i][j].havePassed = 0;
+			BFSMap[i][j].isDestination = 0;
+		}
+	}
+	for(i = 1; i <= map->destinationNum; i++) {
+		BFSMap[specialPoint[i][0]][specialPoint[i][1]].isDestination = 1;
+	}
+	
+	for(i = 0; i < map->destinationNum; i++) {
+		BFSMap[specialPoint[i][0]][specialPoint[i][1]].isDestination = 0;
+		top = 1;
+		QueueUnit *noteLeft, *noteRight;
+		
+		priorityQueue[top].weight = 0;
+		priorityQueue[top].YX[0] = specialPoint[i][0];
+		priorityQueue[top++].YX[1] = specialPoint[i][1];
+		short specialPointNum = map->destinationNum-i;
+			
+		while(top != 1)	{
+			printf("i\n");
+			QueueUnit now = { priorityQueue[1].weight, {priorityQueue[1].YX[0], priorityQueue[1].YX[1]}};
+			printf("%hd %hd %hd\n", now.weight, now.YX[0], now.YX[1]);
+			byte haveAlreadyPassed = FALSE;
+			if(BFSMap[now.YX[0]][now.YX[1]].havePassed == FALSE) {
+				BFSMap[now.YX[0]][now.YX[1]].havePassed = TRUE;
+			}
+			else {
+				haveAlreadyPassed = TRUE;
+			}
+			
+			if(BFSMap[now.YX[0]][now.YX[1]].isDestination == 1) {
+				specialPointNum--;
+			}
+			if(specialPointNum == 0) {
+				break;
+			}
+			
+			priorityQueue[1] = priorityQueue[--top];
+			short sinkDown = 1;
+			while(TRUE) {
+				if(2*sinkDown+1 < top) {
+					noteLeft = &priorityQueue[2*sinkDown];
+					noteRight = &priorityQueue[2*sinkDown+1];
+					if(priorityQueue[sinkDown].weight > noteLeft->weight || priorityQueue[sinkDown].weight > noteRight->weight) {
+						
+						if(noteLeft->weight >= noteRight->weight) {
+							QueueUnit temp = priorityQueue[sinkDown];
+							priorityQueue[sinkDown] = *noteLeft;
+							*noteLeft = temp;
+							sinkDown = 2*sinkDown;
+						}
+						else {
+							QueueUnit temp = priorityQueue[sinkDown];
+							priorityQueue[sinkDown] = *noteRight;
+							*noteRight = temp;
+							sinkDown = 2*sinkDown + 1;
+						}
+						
+					}
+					else {
+						break;
+					}
+				}
+				else if(2*sinkDown < top) {
+					noteLeft = &priorityQueue[2*sinkDown];
+					QueueUnit temp = priorityQueue[sinkDown];
+					priorityQueue[sinkDown] = *noteLeft;
+					*noteLeft = temp;
+					sinkDown = 2*sinkDown;
+				}
+				else {
+					break;
+				}
+			}
+			if(haveAlreadyPassed) {
+				continue;
+			}
+			
+			
+			for(compassPoint = 0; compassPoint < 8; compassPoint++) {
+				directY = compass[compassPoint][0] + now.YX[0];	// directY buffer the Y coordinate of the position detected
+				directX = compass[compassPoint][1] + now.YX[1];	// directX buffer the X coordinate of the position detected
+				if(directY < 0 || directX < 0 || directY == map->edge || directX == map->edge) { // if out of boundary, continue
+					//pass
+				}
+				else {
+					if(!BFSMap[directY][directX].havePassed){
+						short floatUp = top;
+						priorityQueue[top].weight = now.weight + map->terrainMap[now.YX[0]][now.YX[1]].cost[compassPoint];
+						priorityQueue[top].YX[0] = directY;
+						priorityQueue[top++].YX[1] = directX;
+						while(floatUp != 1) {
+							if(priorityQueue[floatUp].weight < priorityQueue[floatUp/2].weight) {
+								QueueUnit temp = priorityQueue[floatUp];
+								priorityQueue[floatUp] = priorityQueue[floatUp/2];
+								priorityQueue[floatUp/2] = temp;
+								floatUp /= 2;
+							}
+							else {
+								break;
+							}
+						}
+					}
+				}
+			}
+			
+		}
+	}
+	
+	
+	safeFree(priorityQueue);
+	
+	for(i = 0; i < map->edge; i++) {
+		safeFree(*(BFSMap+i));
+	}
+	safeFree(BFSMap);
 }
