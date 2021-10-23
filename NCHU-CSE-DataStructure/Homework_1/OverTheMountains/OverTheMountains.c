@@ -35,6 +35,8 @@ void setMapRouteCost(Map*);
 typedef struct queueUnit {
 	short weight;
 	short YX[2];
+	short FAweight;
+	short FA[2];
 } QueueUnit;
 void swapQueueUnit(QueueUnit*, QueueUnit*);
 
@@ -287,10 +289,13 @@ void setMapRouteCost(Map *map) {
 		priorityQueue[top].YX[0] = specialPoint[i][0];
 		priorityQueue[top++].YX[1] = specialPoint[i][1];
 		short specialPointNum = map->destinationNum-i;
-		printf("===i: %hd===\n", i);
+		printf("===i: %hd===----------------\n", i);
 		while(top != 1)	{
-			QueueUnit now = { priorityQueue[1].weight, {priorityQueue[1].YX[0], priorityQueue[1].YX[1]}};
+			QueueUnit now = priorityQueue[1];
+			printf("=-==-=\n");
 			printf("%hd %hd %hd top: %hd\n", now.weight, now.YX[0], now.YX[1], top);
+			printf("%hd %hd %hd\n", now.FAweight, now.FA[0], now.FA[1]);
+			printf("=-==-=\n");
 			byte haveAlreadyPassed = FALSE;
 			if(BFSMap[now.YX[0]][now.YX[1]].havePassed == FALSE) {
 				BFSMap[now.YX[0]][now.YX[1]].havePassed = TRUE;
@@ -357,6 +362,9 @@ void setMapRouteCost(Map *map) {
 					if(!BFSMap[directY][directX].havePassed){
 						short floatUp = top;
 						priorityQueue[top].weight = now.weight + map->terrainMap[now.YX[0]][now.YX[1]].cost[compassPoint];
+						priorityQueue[top].FA[0] = now.YX[0];
+						priorityQueue[top].FA[1] = now.YX[1];
+						priorityQueue[top].FAweight = now.weight;
 						priorityQueue[top].YX[0] = directY;
 						priorityQueue[top++].YX[1] = directX;
 						while(floatUp != 1) {
