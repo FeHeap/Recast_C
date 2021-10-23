@@ -249,7 +249,7 @@ void setMapRouteCost(Map *map) {
 	short i, j, k;
 	
 	// malloc priorityQueue and BFSMap
-	RAII_VARIABLE(QueueUnit*, priorityQueue, (QueueUnit*)malloc((16 * map->edge + 1) * sizeof(QueueUnit)), free);
+	RAII_VARIABLE(QueueUnit*, priorityQueue, (QueueUnit*)malloc((64 * map->edge + 1) * sizeof(QueueUnit)), free);
 	RAII_VARIABLE(BFSMapUnit**, BFSMap, (BFSMapUnit**)malloc(map->edge * sizeof(BFSMapUnit*)), free);
 	for(i = 0; i < map->edge; i++) {
 		*(BFSMap+i) = (BFSMapUnit*)malloc(map->edge * sizeof(BFSMapUnit));
