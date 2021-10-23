@@ -422,7 +422,7 @@ void countLeastCost(Map *map, short state, short route) {
 	// detect whether all points have passed
 	byte fullFlag = TRUE;
 	for(i = 1; i <= map->destinationNum; i++) {
-		if(destinationState[i] == 0) {
+		if(destinationState[i] == FALSE) {
 			fullFlag = FALSE;
 		}
 	}
@@ -436,7 +436,7 @@ void countLeastCost(Map *map, short state, short route) {
 		if(i == state) {
 			continue;
 		}
-		if(destinationState[i] == 0) {
+		if(destinationState[i] == FALSE) {
 			countLeastCost(map, i, route + map->routeCost[state][i]);
 		}
 	}
