@@ -82,7 +82,7 @@ int main() {
 
 	short mapNum;	// the number of maps
 	char charBuff;			// to buff blank or '\n'
-	fscanf(fin, "%hhd", &mapNum);	// get the number of maps
+	fscanf(fin, "%hd", &mapNum);	// get the number of maps
 	charBuff = fgetc(fin);	// buff '\n'
 	
 	
@@ -155,7 +155,7 @@ int main() {
 		CountLeastCost(aMap);
 		/* store the outcome(LeastCost) into OUTPUT_FILE */
 		fprintf(fout, "#%hd\n", i+1);
-		fprintf(fout, "cost:%d", aMap->leastCost);
+		fprintf(fout, "cost:%hd", aMap->leastCost);
 		if(i != mapNum-1) {
 			fprintf(fout, "\n");
 		}
@@ -447,7 +447,7 @@ void countLeastCost(Map *map, short state, short route) {
 
 void CountLeastCost(Map* map) {
 	// initial destinationState
-	int i;
+	short i;
 	for(i = 0; i < 6; i++) {
 		destinationState[i] = FALSE;
 	}
