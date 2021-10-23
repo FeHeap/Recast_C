@@ -103,19 +103,19 @@ int main() {
 		fscanf(fin, "%hd", &edge);
 		charBuff = fgetc(fin);	// buff '\n'
 		
-		// get the X
-		fscanf(fin, "%hd", &startAddress[1]);
-		charBuff = fgetc(fin);	// buff blank
-		// get the Y
+		// get the X 
 		fscanf(fin, "%hd", &startAddress[0]);
+		charBuff = fgetc(fin);	// buff blank
+		// get the Y 
+		fscanf(fin, "%hd", &startAddress[1]);
 		charBuff = fgetc(fin);	// buff '\n'
 		
 		for(j = 0; j < destinationNum; j++) {
-			// get the X
-			fscanf(fin, "%hd", &destination[j][1]);
-			charBuff = fgetc(fin);	// buff blank
-			//  get the Y
+			// get the X 
 			fscanf(fin, "%hd", &destination[j][0]);
+			charBuff = fgetc(fin);	// buff blank
+			// get the Y 
+			fscanf(fin, "%hd", &destination[j][1]);
 			charBuff = fgetc(fin);	// buff '\n'
 		}
 		
@@ -141,15 +141,7 @@ int main() {
 		
 		/* set aMap RouteCost */ 
 		setMapRouteCost(aMap);
-		
-		printf("=======\n");
-		for(j = 0; j <= aMap->destinationNum; j++) {
-			for(k = 0; k <= aMap->destinationNum; k++) {
-				printf("%hd ", aMap->routeCost[j][k]);
-			}
-			printf("\n");
-		}
-		printf("=======\n");
+
 		
 		/* count aMap LeastCost */ 
 		CountLeastCost(aMap);

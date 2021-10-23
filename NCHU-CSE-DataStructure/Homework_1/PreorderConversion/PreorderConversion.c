@@ -351,9 +351,13 @@ byte getOperatorWeight(char Operator) {
 			break;
 			
 		case '&':
-		case '^':
-		case '|':
 			weight = 3;
+			break;
+		case '^':
+			weight = 4;
+			break;
+		case '|':
+			weight = 5;
 			break;
 			
 		default: //pass
