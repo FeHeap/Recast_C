@@ -86,6 +86,8 @@ int main() {
 	charBuff = fgetc(fin);	// buff '\n'
 	
 	
+	printf("Finding the path with the least consumption in each map...\n");
+	
 	// variable to count the times
 	short i, j, k;
 	short destinationNum, edge;
@@ -145,6 +147,8 @@ int main() {
 		
 		/* count aMap LeastCost */ 
 		CountLeastCost(aMap);
+		
+		
 		/* store the outcome(LeastCost) into OUTPUT_FILE */
 		fprintf(fout, "#%hd\n", i+1);
 		fprintf(fout, "cost:%hd", aMap->leastCost);
@@ -161,8 +165,6 @@ int main() {
 		// free aMap
 		safeFree(aMap);
 	}
-	
-	printf("Finding the path with the least consumption in each map...\n");
 
 	
 	// close files
@@ -249,7 +251,7 @@ void setMapRouteCost(Map *map) {
 	short i, j, k;
 	
 	// malloc priorityQueue and BFSMap
-	RAII_VARIABLE(QueueUnit*, priorityQueue, (QueueUnit*)malloc((64 * map->edge + 1) * sizeof(QueueUnit)), free);
+	RAII_VARIABLE(QueueUnit*, priorityQueue, (QueueUnit*)malloc(((int)pow(map->edge, 2) + 1) * sizeof(QueueUnit)), free);
 	RAII_VARIABLE(BFSMapUnit**, BFSMap, (BFSMapUnit**)malloc(map->edge * sizeof(BFSMapUnit*)), free);
 	for(i = 0; i < map->edge; i++) {
 		*(BFSMap+i) = (BFSMapUnit*)malloc(map->edge * sizeof(BFSMapUnit));
