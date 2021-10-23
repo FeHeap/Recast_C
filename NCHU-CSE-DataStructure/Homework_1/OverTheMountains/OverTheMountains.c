@@ -148,7 +148,6 @@ int main() {
 		/* count aMap LeastCost */ 
 		CountLeastCost(aMap);
 		
-		
 		/* store the outcome(LeastCost) into OUTPUT_FILE */
 		fprintf(fout, "#%hd\n", i+1);
 		fprintf(fout, "cost:%hd", aMap->leastCost);
@@ -251,7 +250,7 @@ void setMapRouteCost(Map *map) {
 	short i, j, k;
 	
 	// malloc priorityQueue and BFSMap
-	RAII_VARIABLE(QueueUnit*, priorityQueue, (QueueUnit*)malloc(((int)pow(map->edge, 2) + 1) * sizeof(QueueUnit)), free);
+	RAII_VARIABLE(QueueUnit*, priorityQueue, (QueueUnit*)malloc(((int)pow(map->edge, 2) + 1) * 4 * sizeof(QueueUnit)), free);
 	RAII_VARIABLE(BFSMapUnit**, BFSMap, (BFSMapUnit**)malloc(map->edge * sizeof(BFSMapUnit*)), free);
 	for(i = 0; i < map->edge; i++) {
 		*(BFSMap+i) = (BFSMapUnit*)malloc(map->edge * sizeof(BFSMapUnit));
@@ -405,7 +404,7 @@ void swapQueueUnit(QueueUnit *A, QueueUnit *B) {
 }
 
 // for record whether the point have passed for countLeastCost
-byte destinationState[6];
+byte destinationState[6] = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,};
 
 void countLeastCost(Map *map, short state, short route) {
 	// arrived this point
@@ -422,6 +421,7 @@ void countLeastCost(Map *map, short state, short route) {
 	}
 	if(fullFlag) {
 		map->leastCost = (map->leastCost < route)? map->leastCost : route;
+		destinationState[state] = FALSE;
 		return;
 	}
 	
@@ -439,13 +439,7 @@ void countLeastCost(Map *map, short state, short route) {
 	destinationState[state] = FALSE;
 }
 
-void CountLeastCost(Map* map) {
-	// initial destinationState
-	short i;
-	for(i = 0; i < 6; i++) {
-		destinationState[i] = FALSE;
-	}
-	
+void CountLeastCost(Map* map) {	
 	// execute countLeastCost
 	countLeastCost(map, 0, 0);
 }
