@@ -7,6 +7,7 @@
 #define byte char
 #define TRUE 1
 #define FALSE 0
+#define SpecialPointNum 6
 
 #define safeFree(p) saferFree((void**)&(p))
 #define RAII_VARIABLE(vartype, varname, initval, dtor) \
@@ -24,8 +25,8 @@ typedef struct map {
 	short destinationNum;
 	short edge;
 	short startAddress[2];
-	short destination[5][2];
-	short routeCost[6][6];	// start: 0, destination: 1, 2, 3, 4, 5
+	short destination[SpecialPointNum-1][2];
+	short routeCost[SpecialPointNum][SpecialPointNum];	// start: 0, destination: 1, 2, 3, 4, 5, ...
 	Mountain **terrainMap;
 } Map;
 
@@ -47,6 +48,7 @@ void swapQueueUnit(QueueUnit*, QueueUnit*);
 void CountLeastCost(Map*);
 void countLeastCost(Map*, short, short);
 
+
 // compass to detect 8 directions around
 short compass[8][2] = {{-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1},};
 short directY, directX;
@@ -59,7 +61,7 @@ int main() {
 	if(!((fout = fopen(OUTPUT_FILE, "r")) == NULL)) {
 		fclose(fin);
 		printf("File %s has already existed! Overwrite?[Y/n] ", OUTPUT_FILE);
-		char Overwrite[10];
+		char Overwrite[20];
 		gets(Overwrite);
 		int i = 0;
 		while(isspace(Overwrite[i])) {
@@ -92,7 +94,7 @@ int main() {
 	short i, j, k;
 	short destinationNum, edge;
 	short startAddress[2];
-	short destination[5][2];
+	short destination[SpecialPointNum-1][2];
 
 	// which map do the process read
 	for(i = 0; i < mapNum; i++) {	// map
@@ -257,7 +259,7 @@ void setMapRouteCost(Map *map) {
 	}
 
 	// specialPoint == start || destination
-	short specialPoint[6][2];
+	short specialPoint[SpecialPointNum][2];
 	specialPoint[0][0] = map->startAddress[0];
 	specialPoint[0][1] = map->startAddress[1];
 	for(i = 1; i <= map->destinationNum; i++) {
@@ -403,8 +405,9 @@ void swapQueueUnit(QueueUnit *A, QueueUnit *B) {
 	*B = temp;
 }
 
+
 // for record whether the point have passed for countLeastCost
-byte destinationState[6] = {FALSE, FALSE, FALSE, FALSE, FALSE, FALSE,};
+byte destinationState[SpecialPointNum] = { FALSE };
 
 void countLeastCost(Map *map, short state, short route) {
 	// arrived this point

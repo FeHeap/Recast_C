@@ -56,7 +56,7 @@ int main() {
 	fscanf(fin, "%u", &mapNum);	// get the number of maps
 	charBuff = fgetc(fin);	// buff '\n'
 	
-	printf("Comversing data to sparse matrices...\n");
+	printf("Conversing data to sparse matrices...\n");
 	
 	// variable to count the times
 	short i, j, k, g;
