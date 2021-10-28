@@ -10,6 +10,8 @@
 #define SpecialPointNum 6
 
 #define safeFree(p) saferFree((void**)&(p))
+#define  CountLeastCost(mapX) countLeastCost(mapX, 0, 0)
+
 #define RAII_VARIABLE(vartype, varname, initval, dtor) \
 	void _dtor_ ## varname (vartype * v){ dtor(*v); } \
 	vartype varname __attribute__((cleanup(_dtor_ ## varname))) = (initval)
@@ -30,29 +32,11 @@ typedef struct map {
 	Mountain **terrainMap;
 } Map;
 
-typedef struct queueUnit {
-	short weight;
-	short YX[2];
-} QueueUnit;
-
-typedef struct bfsMapUnit {
-	byte isDestination;
-	byte havePassed;
-} BFSMapUnit;
-
 void saferFree(void**);
 short** createInitailMap(short);
 Map* createMap(short, short, short*, short(*)[2], short**);
 void setMapRouteCost(Map*);
-void swapQueueUnit(QueueUnit*, QueueUnit*);
-void CountLeastCost(Map*);
 void countLeastCost(Map*, short, short);
-
-
-// compass to detect 8 directions around
-short compass[8][2] = {{-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1},};
-short directY, directX;
-short compassPoint;
 
 /* Main Function */
 int main() {
@@ -186,6 +170,7 @@ void saferFree(void **pp){
 	}
 }
 
+
 short** createInitailMap(short edge) {
 	
 	short i;	
@@ -196,6 +181,12 @@ short** createInitailMap(short edge) {
 	
 	return initialMapData;
 }
+
+
+// compass to detect 8 directions around
+short compass[8][2] = {{-1, 0}, {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1},};
+short directY, directX;
+short compassPoint;
 
 Map* createMap(short destinationNum, short edge, short *startAddress, short (*destination)[2], short** initialMapData) {
 	
@@ -246,6 +237,19 @@ Map* createMap(short destinationNum, short edge, short *startAddress, short (*de
 	
 	return map;
 }
+
+
+typedef struct queueUnit {
+	short weight;
+	short YX[2];
+} QueueUnit;
+
+typedef struct bfsMapUnit {
+	byte isDestination;
+	byte havePassed;
+} BFSMapUnit;
+
+void swapQueueUnit(QueueUnit*, QueueUnit*);
 
 void setMapRouteCost(Map *map) {
 	// declare variables for count
@@ -422,6 +426,8 @@ void countLeastCost(Map *map, short state, short route) {
 			fullFlag = FALSE;
 		}
 	}
+	
+	// if all the special points have been passed
 	if(fullFlag) {
 		map->leastCost = (map->leastCost < route)? map->leastCost : route;
 		destinationState[state] = FALSE;
@@ -440,9 +446,4 @@ void countLeastCost(Map *map, short state, short route) {
 	
 	// leave this point
 	destinationState[state] = FALSE;
-}
-
-void CountLeastCost(Map* map) {	
-	// execute countLeastCost
-	countLeastCost(map, 0, 0);
 }
