@@ -19,7 +19,7 @@
 FILE *fin, *fout;
 
 typedef struct mountain {
-	short cost[8];
+	short cost[8];	// the cost of the current position to 8 direction
 } Mountain;
 
 typedef struct map {
