@@ -25,11 +25,7 @@ typedef struct unit {
 
 void saferFree(void**);
 Unit* structUpFormula(const char*);
-void pushFormulaStruct(Unit**, const char*);
-Unit* popFormulaStruct(Unit**);
 void PreorderConverse(Unit**);
-byte getOperatorWeight(char);
-
 
 /* Main Function */
 int main() {
@@ -144,6 +140,8 @@ enum state {
 	end,			// 5
 };
 
+void pushFormulaStruct(Unit**, const char*);
+
 Unit* structUpFormula(const char *Formula) {
 	
 	size_t length = strlen(Formula);
@@ -232,40 +230,9 @@ Unit* structUpFormula(const char *Formula) {
 	return head;
 }
 
-void pushFormulaStruct(Unit **top, const char *content) {
-	
-	Unit *tempUnit = (Unit*)malloc(sizeof(Unit));
-	
-	if(strlen(content) == 1 && !isalnum(content[0])) {
-		if(content[0] == '(') {
-			tempUnit->type = type_open;
-			tempUnit->content = NULL;
-		}
-		else if(content[0] == ')') {
-			tempUnit->type = type_close;
-			tempUnit->content = NULL;
-		}
-		else {
-			tempUnit->type = type_operate;
-			tempUnit->content = (char*)malloc(sizeof(char));
-			tempUnit->content[0] = content[0];
-		}
-	}
-	else {
-		tempUnit->type = type_num;
-		tempUnit->content = (char*)malloc((strlen(content) + 1) * sizeof(char));
-		strcpy(tempUnit->content, content);
-	}
-	
-	tempUnit->next = *top;
-	*top = tempUnit;
-}
 
-Unit* popFormulaStruct(Unit **top) {
-	Unit *tempUnit = *top;
-	*top = (*top)->next;
-	return tempUnit;
-}
+Unit* popFormulaStruct(Unit**);
+byte getOperatorWeight(char);
 
 void PreorderConverse(Unit** formulaHead) {
 	
@@ -327,6 +294,41 @@ void PreorderConverse(Unit** formulaHead) {
 	
 	// point *formulaHead to preorderFormula
 	*formulaHead = preorderFormula;
+}
+
+void pushFormulaStruct(Unit **top, const char *content) {
+	
+	Unit *tempUnit = (Unit*)malloc(sizeof(Unit));
+	
+	if(strlen(content) == 1 && !isalnum(content[0])) {
+		if(content[0] == '(') {
+			tempUnit->type = type_open;
+			tempUnit->content = NULL;
+		}
+		else if(content[0] == ')') {
+			tempUnit->type = type_close;
+			tempUnit->content = NULL;
+		}
+		else {
+			tempUnit->type = type_operate;
+			tempUnit->content = (char*)malloc(sizeof(char));
+			tempUnit->content[0] = content[0];
+		}
+	}
+	else {
+		tempUnit->type = type_num;
+		tempUnit->content = (char*)malloc((strlen(content) + 1) * sizeof(char));
+		strcpy(tempUnit->content, content);
+	}
+	
+	tempUnit->next = *top;
+	*top = tempUnit;
+}
+
+Unit* popFormulaStruct(Unit **top) {
+	Unit *tempUnit = *top;
+	*top = (*top)->next;
+	return tempUnit;
 }
 
 byte getOperatorWeight(char Operator) {
