@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <ctype.h>
 
 #define INPUT_FILE "input_3.txt"
 #define OUTPUT_FILE "output_3.txt"
