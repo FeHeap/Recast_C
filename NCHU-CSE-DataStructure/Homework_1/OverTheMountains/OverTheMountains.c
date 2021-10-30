@@ -2,15 +2,17 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define INPUT_FILE "input_3.txt"
-#define OUTPUT_FILE "output_3.txt"
+#define INPUT_FILE "input_3x.txt"
+#define OUTPUT_FILE "output_3x.txt"
 #define byte char
 #define TRUE 1
 #define FALSE 0
 #define SpecialPointNum 6
 
 #define safeFree(p) saferFree((void**)&(p))
-#define  CountLeastCost(mapX) countLeastCost(mapX, 0, 0)
+#define FreeInitialMap(initmapX, edge) freeInitialMap(&initmapX, edge)
+#define CountLeastCost(mapX) countLeastCost(mapX, 0, 0)
+#define FreeMap(mapX) freeMap(&mapX)
 
 #define RAII_VARIABLE(vartype, varname, initval, dtor) \
 	void _dtor_ ## varname (vartype * v){ dtor(*v); } \
@@ -34,9 +36,11 @@ typedef struct map {
 
 void saferFree(void**);
 short** createInitailMap(short);
+void freeInitialMap(short***, short);
 Map* createMap(short, short, short*, short(*)[2], short**);
 void setMapRouteCost(Map*);
 void countLeastCost(Map*, short, short);
+void freeMap(Map**);
 
 /* Main Function */
 int main() {
@@ -122,10 +126,7 @@ int main() {
 		Map *aMap = createMap(destinationNum, edge, startAddress, destination, initialMapData);
 		
 		// free the initial map
-		for(j = 0; j < edge; j++) {
-			safeFree(*(initialMapData+j));
-		}
-		safeFree(initialMapData);
+		FreeInitialMap(initialMapData, edge);
 		
 		/* set aMap RouteCost */ 
 		setMapRouteCost(aMap);
@@ -141,14 +142,8 @@ int main() {
 			fprintf(fout, "\n");
 		}
 		
-		// free lists in terrainMap in aMap
-		for(j = 0; j < edge; j++) {
-			safeFree(*(aMap->terrainMap+j));
-		}
-		// free terrainMap in aMap
-		safeFree(aMap->terrainMap);
-		// free aMap
-		safeFree(aMap);
+		/* free aMap */
+		FreeMap(aMap);
 	}
 
 	
@@ -180,6 +175,14 @@ short** createInitailMap(short edge) {
 	}
 	
 	return initialMapData;
+}
+
+void freeInitialMap(short*** initialMap, short edge) {
+	int i;
+	for(i = 0; i < edge; i++) {
+			free(*((*initialMap)+i));
+	}
+	safeFree(*initialMap);
 }
 
 
@@ -446,4 +449,16 @@ void countLeastCost(Map *map, short state, short route) {
 	
 	// leave this point
 	destinationState[state] = FALSE;
+}
+
+void freeMap(Map** aMap) {
+	// free lists in terrainMap in aMap
+	int i;
+	for(i = 0; i < (*aMap)->edge; i++) {
+		free(*((*aMap)->terrainMap+i));
+	}
+	// free terrainMap in aMap
+	free((*aMap)->terrainMap);
+	// free aMap
+	safeFree(*aMap);
 }
