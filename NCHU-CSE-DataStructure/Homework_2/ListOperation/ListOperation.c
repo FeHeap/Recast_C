@@ -100,7 +100,7 @@ int strToInt(char*);
 void add(LinkedList*, char*);
 void del(LinkedList*, char*);
 void ins();
-void mul(LinkedList*, char*, char*);
+void mul(LinkedList*, char*);
 void rev();
 void show(LinkedList*);
 
@@ -145,6 +145,7 @@ void instructionProcess(LinkedList *list, char *instruction) {
 		case 'i':/* ins */
 			break;
 		case 'm':/* mul */
+			mul(list, &instruction[4]);
 			break;
 		case 'r':/* rev */
 			break;
@@ -192,6 +193,25 @@ void del(LinkedList *list, char *asignedOrder) {
 	}
 	free(temp);
 	list->numOfList -= 1;
+}
+
+
+
+void mul(LinkedList *list, char *parements) {
+	int reverseOrder_preNode = strToInt(parements) - 1;
+	int i;
+	for(i = 0; TRUE; i++) {
+		if(isspace(parements[i])) {
+			i++;
+			break;
+		}
+	}
+	int multiple = strToInt(&parements[i]);
+	ListPointer temp = list->Head;
+	for(i = 0; i < reverseOrder_preNode; i++) {
+		temp = temp->link;
+	}
+	temp->data *= multiple;
 }
 
 void show(LinkedList *list) {
