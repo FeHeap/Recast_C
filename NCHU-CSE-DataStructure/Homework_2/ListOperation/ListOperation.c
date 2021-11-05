@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 
 #define FreeLinkedList(list) freeLinkedList(&list)
@@ -120,6 +121,7 @@ enum readListData {
 };
 
 void constructLinkedList(LinkedList *list, char *listData) {
+	if(strlen(listData) == 0) { return; }
 	enum readListData state;
 	int i = 0;
 	while(TRUE) {
