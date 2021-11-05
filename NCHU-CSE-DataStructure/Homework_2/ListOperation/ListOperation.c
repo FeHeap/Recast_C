@@ -3,8 +3,8 @@
 #include <ctype.h>
 
 #define FreeLinkedList(list) freeLinkedList(&list)
-#define INPUT_FILE "test_case_1-1/input_1.txt" 
-#define OUTPUT_FILE "test_case_1-1/output_1.txt"
+#define INPUT_FILE "test_case_1-3/input_1.txt" 
+#define OUTPUT_FILE "test_case_1-3/output_1.txt"
 #define TRUE 1
 #define EOS '\0'
 
@@ -52,39 +52,48 @@ int main() {
 	}
 	
 	// output file opened with mode "w"
-	//fout = fopen(OUTPUT_FILE, "w");
+	fout = fopen(OUTPUT_FILE, "w");
 	
+	printf("Processing data...\n");
+	
+	/* create and initialize list */
 	LinkedList *list = (LinkedList*)malloc(sizeof(LinkedList));
 	linkedListInit(list);
 	
+	
 	char charBuff;
-	int lenOfFirstLine = 1;	// 1 for '\0'
+	// count the number of chars in first line
+	int lenOfFirstLine = 1;	// 1 for EOS
 	while((charBuff = fgetc(fin)) != '\n') {
 		lenOfFirstLine++;
 	}
 	rewind(fin);
 	char *firstLine = (char*)malloc(lenOfFirstLine * sizeof(char));
-	fscanf(fin, "%[^\n]", firstLine);
+	fscanf(fin, "%[^\n]", firstLine);	// read first line
 	charBuff = fgetc(fin); // buffer '\n'
+	/* build initial list with data in the first line */
 	constructLinkedList(list, firstLine);
 	free(firstLine);
 	
-	char instructionBuff[50];
 	int numOfInstruction;
-	fscanf(fin, "%d", &numOfInstruction);
+	fscanf(fin, "%d", &numOfInstruction);	// read the number of instruction
 	charBuff = fgetc(fin); // buffer '\n'
+	char instructionBuff[50];
 	int i;
 	for(i = 0; i < numOfInstruction; i++) {
-		fscanf(fin, "%[^\n]", instructionBuff);
+		fscanf(fin, "%[^\n]", instructionBuff);	// read instruction
 		charBuff = fgetc(fin); // buffer '\n'
-		instructionProcess(list, instructionBuff);
+		instructionProcess(list, instructionBuff); // modify the list with the instruction having read just now
 	}
 	
+	/* free list*/
 	FreeLinkedList(list);
 	
 	// close files
 	fclose(fin);
-	//fclose(fout);
+	fclose(fout);
+	
+	printf("Finish processing the data and the instructions and save the outcome into %s...\n", OUTPUT_FILE);
 
 	system("PAUSE");
 	return 0;
@@ -99,9 +108,9 @@ void linkedListInit(LinkedList *list) {
 int strToInt(char*);
 void add(LinkedList*, char*);
 void del(LinkedList*, char*);
-void ins();
+void ins(LinkedList*, char*);
 void mul(LinkedList*, char*);
-void rev();
+void rev(LinkedList*, char*);
 void show(LinkedList*);
 
 enum readListData {
@@ -117,7 +126,7 @@ void constructLinkedList(LinkedList *list, char *listData) {
 		state = preData;
 		add(list, &listData[i]);
 		for(;TRUE;i++) {
-			if(state == Blank) {
+			if(state == Blank && !isspace(listData[i])) {
 				break;
 			}
 			if(listData[i] == EOS) {
@@ -135,23 +144,35 @@ void constructLinkedList(LinkedList *list, char *listData) {
 }
 
 void instructionProcess(LinkedList *list, char *instruction) {
+	
+	int i;
+	
 	switch(instruction[0]) {
-		case 'a':/* add */
-			add(list, &instruction[4]);
-			break;
-		case 'd':/* del */
-			del(list, &instruction[4]);
-			break;
-		case 'i':/* ins */
-			break;
-		case 'm':/* mul */
-			mul(list, &instruction[4]);
-			break;
-		case 'r':/* rev */
-			break;
 		case 's':/* show */
 			show(list);
 			break;
+		
+		default:
+			i = 0;
+			while(!isspace(instruction[i++]));
+			switch(instruction[0]) {
+				case 'a':/* add */
+					add(list, &instruction[i]);
+					break;
+				case 'd':/* del */
+					del(list, &instruction[i]);
+					break;
+				case 'i':/* ins */
+					ins(list, &instruction[i]);
+					break;
+				case 'm':/* mul */
+					mul(list, &instruction[i]);
+					break;
+				case 'r':/* rev */
+					rev(list, &instruction[i]);
+					break;
+			}
+			break;		
 	}
 }
 
@@ -166,7 +187,23 @@ void freeLinkedList(LinkedList **list) {
 	*list = NULL;
 }
 
+/* show */
+void show(LinkedList *list) {
+	ListPointer temp = list->Head;
+	int *showBuffer = (int*)malloc(list->numOfList * sizeof(int));
+	int i;
+	for(i = list->numOfList-1; i >= 0; i--) {
+		showBuffer[i] = temp->data;
+		temp = temp->link;
+	}
+	for(i = 0; i < list->numOfList; i++) {
+		fprintf(fout, "%d ", showBuffer[i]);
+	}
+	fprintf(fout, "\n");
+	free(showBuffer);
+}
 
+/* add */
 void add(LinkedList *list, char *listData) {
 	ListPointer aNode = (ListPointer)malloc(sizeof(ListNode));
 	aNode->data = strToInt(listData);
@@ -175,8 +212,11 @@ void add(LinkedList *list, char *listData) {
 	list->numOfList += 1;
 }
 
+/* del */
 void del(LinkedList *list, char *asignedOrder) {
-	int reverseOrder_preNode = list->numOfList - strToInt(asignedOrder) - 1;
+	int order = strToInt(asignedOrder);
+	if(order > list->numOfList) { return; }
+	int reverseOrder_preNode = list->numOfList - order - 1;
 	ListPointer point = list->Head;
 	int i;
 	for(i = 0; i < reverseOrder_preNode; i++) {
@@ -195,17 +235,36 @@ void del(LinkedList *list, char *asignedOrder) {
 	list->numOfList -= 1;
 }
 
-
-
-void mul(LinkedList *list, char *parements) {
-	int reverseOrder_preNode = strToInt(parements) - 1;
-	int i;
-	for(i = 0; TRUE; i++) {
-		if(isspace(parements[i])) {
-			i++;
-			break;
-		}
+/* ins */
+void ins(LinkedList *list, char *parements) {
+	int order = strToInt(parements);
+	int i = 0;
+	while(!isspace(parements[i++]));
+	int data = strToInt(&parements[i]);
+	if(order >= list->numOfList) {
+		add(list, &parements[i]);
 	}
+	else {
+		int reverseOrder_preNode = list->numOfList - order - 1;
+		ListPointer point = list->Head;
+		for(i = 0; i < reverseOrder_preNode; i++) {
+			point = point->link;
+		}
+		ListPointer temp = (ListPointer)malloc(sizeof(ListNode));
+		temp->data = data;
+		temp->link = point->link;
+		point->link = temp;
+		list->numOfList += 1;
+	}
+}
+
+/* mul */
+void mul(LinkedList *list, char *parements) {
+	int order = strToInt(parements);
+	if(order > list->numOfList) { return; }
+	int reverseOrder_preNode = order - 1;
+	int i = 0;
+	while(!isspace(parements[i++]));
 	int multiple = strToInt(&parements[i]);
 	ListPointer temp = list->Head;
 	for(i = 0; i < reverseOrder_preNode; i++) {
@@ -214,20 +273,37 @@ void mul(LinkedList *list, char *parements) {
 	temp->data *= multiple;
 }
 
-void show(LinkedList *list) {
-	ListPointer temp = list->Head;
-	int *showBuffer = (int*)malloc(list->numOfList * sizeof(int));
-	int i;
-	for(i = list->numOfList-1; i >= 0; i--) {
-		showBuffer[i] = temp->data;
-		temp = temp->link;
+/* rev */
+void rev(LinkedList *list, char *parement) {
+	ListPointer point = list->Head;
+	ListPointer temp = point;
+	
+	int block = strToInt(parement);
+	int *dataBuff = (int*)malloc(block * sizeof(int));
+	int lastPartOfList = list->numOfList % block;
+	int i, j;
+	if(!(lastPartOfList == 0)) {
+		for(i = 0; i < lastPartOfList; i++) {
+			dataBuff[i] = temp->data;
+			temp = temp->link;
+		}
+		for(i = lastPartOfList-1; i >= 0; i--) {
+			point->data = dataBuff[i];
+			point = point->link;
+		}
 	}
-	printf("%d", showBuffer[0]);
-	for(i = 1; i < list->numOfList; i++) {
-		printf(" %d", showBuffer[i]);
+	int numOfBlock = list->numOfList / block;
+	for(i = 0; i < numOfBlock; i++) {
+		for(j = 0; j < block; j++) {
+			dataBuff[j] = temp->data;
+			temp = temp->link;
+		}
+		for(j = block-1; j >= 0; j--) {
+			point->data = dataBuff[j];
+			point = point->link;
+		}
 	}
-	printf("\n");
-	free(showBuffer);
+	free(dataBuff);
 }
 
 int strToInt(char *str) {
