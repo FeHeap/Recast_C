@@ -40,9 +40,9 @@ typedef struct orderContent {
 	int monny;
 	int receiveTime;
 	int finishTime;
-	struct orderContent *next;
 } OrderContent;
 OrderContent *Order;
+int numOfOrder;
 
 typedef struct process {
 	int processTime;
@@ -72,7 +72,8 @@ void initialPlayer(Player*);
 void resetPlayer(Player*);
 void initialProcessRecord(struct processRecord*);
 void resetProcessRecord(struct processRecord*);
-int halfOrderDetect(OrderContent*);
+void orderOrder(OrderContent*, int);
+
 
 int main() {
 	// detect whether PLAYER_FOUT has already existed
@@ -95,68 +96,18 @@ int main() {
 	initialPlayer(&p1);
 	initialPlayer(&p2);
 	initialProcessRecord(&ProcessRecord);
-	
+	Order = readOrder();
+	orderOrder(Order, numOfOrder);
 	int i, j;
-	while(TRUE) {
-		Order = readOrder();
-		OrderContent *orderTemp;
-		for(i = 0; i < ProcessRecord.num; i++) {
-			orderTemp = Order;
-			if(ProcessRecord.notToDo[i] == Order->number) {
-				Order= Order->next;
-				Vegetable *tempVegetable = orderTemp->cook;
-				while(tempVegetable != NULL) {
-					Vegetable *subTempVegetable = tempVegetable;
-					tempVegetable = tempVegetable->next;
-					free(subTempVegetable);
-				}
-				tempVegetable = orderTemp->cut;
-				while(tempVegetable != NULL) {
-					Vegetable *subTempVegetable = tempVegetable;
-					tempVegetable = tempVegetable->next;
-					free(subTempVegetable);
-				}
-				free(orderTemp);
-			}
-			else {
-				while(ProcessRecord.notToDo[i] != orderTemp->next->number) {
-					orderTemp = orderTemp->next;
-				}
-				OrderContent *orderTempNext = orderTemp->next;
-				orderTemp->next = orderTemp->next->next;
-				Vegetable *tempVegetable = orderTempNext->cook;
-				while(tempVegetable != NULL) {
-					Vegetable *subTempVegetable = tempVegetable;
-					tempVegetable = tempVegetable->next;
-					free(subTempVegetable);
-				}
-				tempVegetable = orderTempNext->cut;
-				while(tempVegetable != NULL) {
-					Vegetable *subTempVegetable = tempVegetable;
-					tempVegetable = tempVegetable->next;
-					free(subTempVegetable);
-				}
-				free(orderTempNext);
-			}	
+	int maxDeadline = 0;
+	for(i = 0; i < numOfOrder; i++) {
+		if(Order[i].finishTime > maxDeadline) {
+			maxDeadline = Order[i].finishTime;
 		}
+	}
+	int t;
+	for(t = 0; t < maxDeadline; t++) {
 		
-		
-		if(halfOrderDetect(Order)) {
-			orderTemp = Order;
-			while(orderTemp) {
-				if(orderTemp->DoOrNot == 1) {
-					ProcessRecord.notToDo[ProcessRecord.num++] = orderTemp->number;
-				}
-				orderTemp = orderTemp->next;	
-			}
-			resetPlayer(&p1);
-			resetPlayer(&p2);
-			resetProcessRecord(&ProcessRecord);
-			freeOrder(&Order);
-		}
-		else {
-			break;
-		}
 	}
 	
 	
@@ -230,56 +181,51 @@ OrderContent* readOrder() {
 		printf("Fail to open file %s!", ORDERS_FIN);
 		exit(EXIT_FAILURE);
 	}
-	OrderContent *order = NULL;
 	char charBuff;
-	int numOfOrder;
 	fscanf(fin, "%d", &numOfOrder);
 	charBuff = fgetc(fin);
+	OrderContent *order = (OrderContent*)malloc(numOfOrder * sizeof(OrderContent));
 	int i, j, k;
 	for(i = 0; i < numOfOrder; i++) {
-		OrderContent *tempOrder = (OrderContent*)malloc(sizeof(OrderContent));
-		tempOrder->DoOrNot = 0;
-		fscanf(fin, "%d", &tempOrder->number);
+		order[i].DoOrNot = 0;
+		fscanf(fin, "%d", &order[i].number);
 		charBuff = fgetc(fin);
-		tempOrder->cook = NULL;
-		tempOrder->cut = NULL;
+		order[i].cook = NULL;
+		order[i].cut = NULL;
 		char dishBuff[35];
 		fscanf(fin, "%[^ ]", dishBuff);
 		for(j = 0; j < Recipes->numOfKind; j++) {
 			if(!strcmp(Recipes->book[j].dish, dishBuff)) {
-				tempOrder->cookNum = Recipes->book[j].cook;
-				for(k = 0; k < tempOrder->cookNum; k++) {
+				order[i].cookNum = Recipes->book[j].cook;
+				for(k = 0; k < order[i].cookNum; k++) {
 					Vegetable *temp = (Vegetable*)malloc(sizeof(Vegetable));
 					strcpy(temp->cookWhat, Recipes->book[j].cookWhat[k]);
-					temp->next = tempOrder->cook;
-					tempOrder->cook = temp;
+					temp->next = order[i].cook;
+					order[i].cook = temp;
 				}
-				tempOrder->cutNum = Recipes->book[j].cut;
-				for(k = 0; k < tempOrder->cutNum; k++) {
+				order[i].cutNum = Recipes->book[j].cut;
+				for(k = 0; k < order[i].cutNum; k++) {
 					Vegetable *temp = (Vegetable*)malloc(sizeof(Vegetable));
 					strcpy(temp->cookWhat, Recipes->book[j].cutWhat[k]);
-					temp->next = tempOrder->cut;
-					tempOrder->cut = temp;
+					temp->next = order[i].cut;
+					order[i].cut = temp;
 				}
-				tempOrder->otherTime = Recipes->book[j].other;
+				order[i].otherTime = Recipes->book[j].other;
 				break;
 			}
 		}
 		charBuff = fgetc(fin);
 
-		fscanf(fin, "%d", &tempOrder->receiveTime);
+		fscanf(fin, "%d", &order[i].receiveTime);
 		charBuff = fgetc(fin);
-		fscanf(fin, "%d", &tempOrder->finishTime);
+		fscanf(fin, "%d", &order[i].finishTime);
 		charBuff = fgetc(fin);
 		int Revenue, Loss;
 		fscanf(fin, "%d", &Revenue);
 		charBuff = fgetc(fin);
 		fscanf(fin, "%d", &Loss);
 		charBuff = fgetc(fin);
-		tempOrder->monny = Revenue - Loss;
-		
-		tempOrder->next = order;
-		order = tempOrder;
+		order[i].monny = Revenue - Loss;
 	}
 	
 	fclose(fin);
@@ -288,23 +234,24 @@ OrderContent* readOrder() {
 }
 
 void freeOrder(OrderContent** order) {
-	while((*order) != NULL) {
-		OrderContent *tempOrder = (*order);
-		(*order) = (*order)->next;
-		Vegetable *tempVegetable = tempOrder->cook;
+	int i;
+	for(i = 0; i < numOfOrder; i++) {
+		printf("%d\n", (*order+i)->number);
+		Vegetable *tempVegetable = (*order+i)->cook;
 		while(tempVegetable != NULL) {
 			Vegetable *subTempVegetable = tempVegetable;
 			tempVegetable = tempVegetable->next;
 			free(subTempVegetable);
 		}
-		tempVegetable = tempOrder->cut;
+		tempVegetable = (*order+i)->cut;
 		while(tempVegetable != NULL) {
 			Vegetable *subTempVegetable = tempVegetable;
 			tempVegetable = tempVegetable->next;
 			free(subTempVegetable);
 		}
-		free(tempOrder);
 	}
+	free(*order);
+	*order = NULL;
 }
 
 void initialPlayer(Player *p) {
@@ -332,14 +279,19 @@ void resetProcessRecord(struct processRecord* ProcessRecord) {
 	ProcessRecord->cutTime = 0;
 }
 
-int halfOrderDetect(OrderContent *order) {
-	int flag = 0;
-	while(order) {
-		if(order->DoOrNot == 1) {
-			flag = 1;
-			break;
+void orderOrder(OrderContent *orders, int num) {
+	int i, j, swapIndex;
+	for(i = 0; i < num-1; i++) {
+		swapIndex = i;
+		for(j = i+1; j < num; j++) {
+			if(orders[j].receiveTime < orders[swapIndex].receiveTime) {
+				swapIndex = j;
+			}
 		}
-		order = order->next;	
+		if(i != swapIndex) {
+			OrderContent temp = orders[i];
+			orders[i] = orders[swapIndex];
+			orders[swapIndex] = temp;
+		} 
 	}
-	return flag;
 }
