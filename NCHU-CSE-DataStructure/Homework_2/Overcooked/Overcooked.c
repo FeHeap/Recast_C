@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 
-#define RECIPES_FIN "test_case_2-3/recipes.txt" 
-#define ORDERS_FIN "test_case_2-3/orders.txt" 
+#define RECIPES_FIN "test_case_2-1/recipes.txt" 
+#define ORDERS_FIN "test_case_2-1/orders.txt" 
 #define PLAYER_FOUT "players.txt"
+#define TRUE 1
 
 FILE *fin, *fout;
 
@@ -30,6 +30,7 @@ typedef struct vegetable {
 } Vegetable;
 
 typedef struct orderContent {
+	int DoOrNot;
 	int number;
 	int cookNum;
 	Vegetable *cook;
@@ -43,8 +44,35 @@ typedef struct orderContent {
 } OrderContent;
 OrderContent *Order;
 
+typedef struct process {
+	int processTime;
+	int number;
+	char type;
+	char vegetableToProcess[15];
+	struct process *next;
+} Process;
+
+typedef struct player {
+	int time;
+	Process *Head;
+} Player;
+Player p1, p2;
+
+struct processRecord {
+	int cookTime;
+	int cutTime;
+	int num;
+	int notToDo[200];
+} ProcessRecord;
+
 CookingTime* readRecipes();
 OrderContent* readOrder();
+void freeOrder(OrderContent**);
+void initialPlayer(Player*);
+void resetPlayer(Player*);
+void initialProcessRecord(struct processRecord*);
+void resetProcessRecord(struct processRecord*);
+int halfOrderDetect(OrderContent*);
 
 int main() {
 	// detect whether PLAYER_FOUT has already existed
@@ -63,45 +91,74 @@ int main() {
 	}
 	
 	Recipes = readRecipes();
-//	int i, j;
-//	printf("%d\n", Recipes->numOfKind);
-//	for(i=0; i < Recipes->numOfKind; i++) {
-//		printf("%s\n", Recipes->book[i].dish);
-//		for(j = 0; j < Recipes->book[i].cook; j++)
-//			printf("%s ", Recipes->book[i].cookWhat[j]);
-//		printf("\n");
-//		for(j = 0; j < Recipes->book[i].cut; j++)
-//			printf("%s ", Recipes->book[i].cutWhat[j]);
-//		printf("\n");
-//		printf("%d\n", Recipes->book[i].other);
-//	}
-//	printf("=========================\n");
-	Order = readOrder();
-//	OrderContent *pOrther = Order;
-//	while(pOrther != NULL) {
-//		OrderContent *tempOrder = pOrther;
-//		pOrther = pOrther->next;
-//		Vegetable *tempVegetable = tempOrder->cook;
-//		printf("%d ", tempOrder->number);
-//		printf("%d ", tempOrder->receiveTime);
-//		printf("%d ", tempOrder->finishTime);
-//		printf("%d ", tempOrder->monny);
-//		printf("\n");
-//		while(tempVegetable != NULL) {
-//			Vegetable *subTempVegetable = tempVegetable;
-//			tempVegetable = tempVegetable->next;
-//			printf("%s ", subTempVegetable->cookWhat);
-//		}
-//		printf("\n");
-//		tempVegetable = tempOrder->cut;
-//		while(tempVegetable != NULL) {
-//			Vegetable *subTempVegetable = tempVegetable;
-//			tempVegetable = tempVegetable->next;
-//			printf("%s ", subTempVegetable->cookWhat);
-//		}
-//		printf("\n");
-//		printf("%d\n", tempOrder->otherTime);
-//	}
+
+	initialPlayer(&p1);
+	initialPlayer(&p2);
+	initialProcessRecord(&ProcessRecord);
+	
+	int i, j;
+	while(TRUE) {
+		Order = readOrder();
+		OrderContent *orderTemp;
+		for(i = 0; i < ProcessRecord.num; i++) {
+			orderTemp = Order;
+			if(ProcessRecord.notToDo[i] == Order->number) {
+				Order= Order->next;
+				Vegetable *tempVegetable = orderTemp->cook;
+				while(tempVegetable != NULL) {
+					Vegetable *subTempVegetable = tempVegetable;
+					tempVegetable = tempVegetable->next;
+					free(subTempVegetable);
+				}
+				tempVegetable = orderTemp->cut;
+				while(tempVegetable != NULL) {
+					Vegetable *subTempVegetable = tempVegetable;
+					tempVegetable = tempVegetable->next;
+					free(subTempVegetable);
+				}
+				free(orderTemp);
+			}
+			else {
+				while(ProcessRecord.notToDo[i] != orderTemp->next->number) {
+					orderTemp = orderTemp->next;
+				}
+				OrderContent *orderTempNext = orderTemp->next;
+				orderTemp->next = orderTemp->next->next;
+				Vegetable *tempVegetable = orderTempNext->cook;
+				while(tempVegetable != NULL) {
+					Vegetable *subTempVegetable = tempVegetable;
+					tempVegetable = tempVegetable->next;
+					free(subTempVegetable);
+				}
+				tempVegetable = orderTempNext->cut;
+				while(tempVegetable != NULL) {
+					Vegetable *subTempVegetable = tempVegetable;
+					tempVegetable = tempVegetable->next;
+					free(subTempVegetable);
+				}
+				free(orderTempNext);
+			}	
+		}
+		
+		
+		if(halfOrderDetect(Order)) {
+			orderTemp = Order;
+			while(orderTemp) {
+				if(orderTemp->DoOrNot == 1) {
+					ProcessRecord.notToDo[ProcessRecord.num++] = orderTemp->number;
+				}
+				orderTemp = orderTemp->next;	
+			}
+			resetPlayer(&p1);
+			resetPlayer(&p2);
+			resetProcessRecord(&ProcessRecord);
+			freeOrder(&Order);
+		}
+		else {
+			break;
+		}
+	}
+	
 	
 	
 	// output file (players) opened with mode "w"
@@ -115,23 +172,7 @@ int main() {
 	free(Recipes);
 	
 	/* free Order */
-	while(Order != NULL) {
-		OrderContent *tempOrder = Order;
-		Order = Order->next;
-		Vegetable *tempVegetable = tempOrder->cook;
-		while(tempVegetable != NULL) {
-			Vegetable *subTempVegetable = tempVegetable;
-			tempVegetable = tempVegetable->next;
-			free(subTempVegetable);
-		}
-		tempVegetable = tempOrder->cut;
-		while(tempVegetable != NULL) {
-			Vegetable *subTempVegetable = tempVegetable;
-			tempVegetable = tempVegetable->next;
-			free(subTempVegetable);
-		}
-		free(tempOrder);
-	}
+	freeOrder(&Order);
 	
 	system("PAUSE");
 	return 0;
@@ -197,6 +238,7 @@ OrderContent* readOrder() {
 	int i, j, k;
 	for(i = 0; i < numOfOrder; i++) {
 		OrderContent *tempOrder = (OrderContent*)malloc(sizeof(OrderContent));
+		tempOrder->DoOrNot = 0;
 		fscanf(fin, "%d", &tempOrder->number);
 		charBuff = fgetc(fin);
 		tempOrder->cook = NULL;
@@ -244,5 +286,60 @@ OrderContent* readOrder() {
 	
 	return order;
 }
- 
 
+void freeOrder(OrderContent** order) {
+	while((*order) != NULL) {
+		OrderContent *tempOrder = (*order);
+		(*order) = (*order)->next;
+		Vegetable *tempVegetable = tempOrder->cook;
+		while(tempVegetable != NULL) {
+			Vegetable *subTempVegetable = tempVegetable;
+			tempVegetable = tempVegetable->next;
+			free(subTempVegetable);
+		}
+		tempVegetable = tempOrder->cut;
+		while(tempVegetable != NULL) {
+			Vegetable *subTempVegetable = tempVegetable;
+			tempVegetable = tempVegetable->next;
+			free(subTempVegetable);
+		}
+		free(tempOrder);
+	}
+}
+
+void initialPlayer(Player *p) {
+	p->time = 0;
+	p->Head = NULL;
+}
+
+void resetPlayer(Player *p) {
+	p->time = 0;
+	while(p->Head) {
+		Process *temp = p->Head;
+		p->Head = p->Head->next;
+		free(temp);
+	}
+}
+
+void initialProcessRecord(struct processRecord* ProcessRecord) {
+	ProcessRecord->cookTime = 0;
+	ProcessRecord->cutTime = 0;
+	ProcessRecord->num = 0;
+}
+
+void resetProcessRecord(struct processRecord* ProcessRecord) {
+	ProcessRecord->cookTime = 0;
+	ProcessRecord->cutTime = 0;
+}
+
+int halfOrderDetect(OrderContent *order) {
+	int flag = 0;
+	while(order) {
+		if(order->DoOrNot == 1) {
+			flag = 1;
+			break;
+		}
+		order = order->next;	
+	}
+	return flag;
+}
