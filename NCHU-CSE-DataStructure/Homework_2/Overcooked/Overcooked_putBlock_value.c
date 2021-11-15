@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
-#define RECIPES_FIN "test_case_2-3/recipes.txt" 
-#define ORDERS_FIN "test_case_2-3/orders.txt" 
+#define RECIPES_FIN "recipes.txt" 
+#define ORDERS_FIN "orders.txt" 
 #define PLAYER_FOUT "players.txt"
 #define TRUE 1
 
@@ -31,10 +30,6 @@ typedef struct vegetable {
 } Vegetable;
 
 typedef struct orderContent {
-	int Done;
-	int CanOutTime;
-	int everDo;
-	
 	int number;
 	int cookNum;
 	Vegetable *cook;
@@ -61,20 +56,12 @@ typedef struct player {
 } Player;
 Player p1, p2;
 
-struct processRecord {
-	int cookTime;
-	int cutTime;
-	int BigStartIndex;
-	int BigEndIndex;
-} ProcessRecord;
+
 
 recipes* readRecipes();
 OrderContent* readOrder();
 void freeOrder(OrderContent**);
 void initialPlayer(Player*);
-void resetPlayer(Player*);
-void initialProcessRecord(struct processRecord*);
-void resetProcessRecord(struct processRecord*);
 void orderOrder(OrderContent*, int);
 
 
@@ -94,23 +81,29 @@ int main() {
 		}
 	}
 	
+	/* read the Recipes and Order */
 	Recipes = readRecipes();
-	Order = NULL;
-	
-	
 	Order = readOrder();
+
+	/* order with priority(monny) */ 
 	orderOrder(Order, numOfOrder);
 	
+	/* initialize Players */
 	initialPlayer(&p1);
 	initialPlayer(&p2);
 	
+	
 	int i, j, k;
+	
+	/* find the last Deadline for create Block  */
 	int maxDeadline = 0;
 	for(i = 0; i < numOfOrder; i++) {
-		if(Order[i].Done != 1 && Order[i].finishTime > maxDeadline) {
+		if(Order[i].finishTime > maxDeadline) {
 			maxDeadline = Order[i].finishTime;
 		}
 	}
+	
+	/* create Block and initialize it */
 	int *cookBlock = (int*)malloc(maxDeadline * sizeof(int));
 	int *cutBlock = (int*)malloc(maxDeadline * sizeof(int));
 	int *p1Block = (int*)malloc(maxDeadline * sizeof(int));
@@ -122,10 +115,13 @@ int main() {
 		p2Block[i] = 0;
 	}
 	
-	
+	/* fill the Block with s, c, f */ 
 	for(i = 0; i < numOfOrder; i++) {
 		
+		/* fStart for food presentation */
 		int fStart = 0;
+		
+		/* cook detect */
 		int cookCondition = 0;
 		int p1js, p2js;
 		if(Order[i].cookNum != 0) {
@@ -202,6 +198,7 @@ int main() {
 			}
 		}
 		
+		/* cut detect */
 		int cutCondition = 0;
 		int p1jc, p2jc;
 		if(Order[i].cutNum != 0) {
@@ -230,7 +227,7 @@ int main() {
 					break;
 				}
 			}
-			//printf("%d\n",i);
+
 			if(p1jc >= Order[i].finishTime - Order[i].otherTime - 3 * Order[i].cutNum && p2jc >= Order[i].finishTime - Order[i].otherTime - 3 * Order[i].cutNum) {
 				if(cookCondition == 1) {
 					for(k = 0; k < 5 * Order[i].cookNum; k++) {
@@ -290,6 +287,7 @@ int main() {
 			}
 		}
 		
+		/* food presentation detect */
 		int fCondition;
 		int p1jf, p2jf;
 		for(p1jf = fStart; p1jf < Order[i].finishTime - Order[i].otherTime; p1jf++) {
@@ -304,7 +302,6 @@ int main() {
 				break;
 			}
 		}
-		
 		for(p2jf = fStart; p2jf < Order[i].finishTime - Order[i].otherTime; p2jf++) {
 			int flag = 1;
 			for(k = 0; k < Order[i].otherTime; k++) {
@@ -317,7 +314,6 @@ int main() {
 				break;
 			}
 		}
-		
 		if(p1jf >= Order[i].finishTime - Order[i].otherTime && p2jf >= Order[i].finishTime - Order[i].otherTime) {
 			if(cookCondition == 1) {
 				for(k = 0; k < 5 * Order[i].cookNum; k++) {
@@ -374,6 +370,7 @@ int main() {
 			}
 		}
 		
+		/* push cook into Player's process */
 		if(cookCondition == 1) {
 			Vegetable *temp = Order[i].cook;
 			while(temp) {
@@ -406,7 +403,6 @@ int main() {
 				temp = temp->next;
 			}
 		}
-		
 		else if(cookCondition == 2) {
 			Vegetable *temp = Order[i].cook;
 			while(temp) {
@@ -440,7 +436,7 @@ int main() {
 			}
 		}
 		
-		
+		/* push cut into Player's process */
 		if(cutCondition == 1) {
 			Vegetable *temp = Order[i].cut;
 			while(temp) {
@@ -507,6 +503,7 @@ int main() {
 			}
 		}
 		
+		/* push food presentation into Player's process */
 		if(fCondition == 1) {
 			Process *tempProcess = (Process*)malloc(sizeof(Process));
 			tempProcess->number = Order[i].number;
@@ -562,11 +559,13 @@ int main() {
 		}
 	}
 	
+	/* to count the number of process */
+	int countProcess = 0;
 	
+	/* reverse p1 process */
 	Process *tempProcessHead = NULL;
-
 	while(p1.Head) {
-		printf("p1 %d %c %d\n", p1.Head->processTime, p1.Head->type, p1.Head->number);
+		countProcess++;
 		Process *tempProcess = p1.Head;
 		p1.Head = p1.Head->next;
 		tempProcess->next = tempProcessHead;
@@ -574,52 +573,55 @@ int main() {
 	}
 	p1.Head = tempProcessHead;
 	
+	/* reverse p2 process */
 	tempProcessHead = NULL;
 	while(p2.Head) {
-		printf("p2 %d %c %d\n", p2.Head->processTime, p2.Head->type, p2.Head->number);
+		countProcess++;
 		Process *tempProcess = p2.Head;
 		p2.Head = p2.Head->next;
 		tempProcess->next = tempProcessHead;
 		tempProcessHead = tempProcess;
 	}
 	p2.Head = tempProcessHead;
-	while(p1.Head || p2.Head) {
-		if(p1.Head && p2.Head) {
-			if(p1.Head->processTime <= p2.Head->processTime) {
-				if(p1.Head->type != 'f')
-					printf("1 %d %d %c %s\n", p1.Head->processTime, p1.Head->number, p1.Head->type, p1.Head->vegetableToProcess);
-				else
-					printf("1 %d %d %c\n", p1.Head->processTime, p1.Head->number, p1.Head->type);
-				p1.Head = p1.Head->next;
-			}
-			else {
-				if(p2.Head->type != 'f')
-					printf("2 %d %d %c %s\n", p2.Head->processTime, p2.Head->number, p2.Head->type, p2.Head->vegetableToProcess);
-				else
-					printf("2 %d %d %c\n", p2.Head->processTime, p2.Head->number, p2.Head->type);
-				p2.Head = p2.Head->next;	
-			}
-		}
-		else if(p1.Head) {
-			if(p1.Head->type != 'f')
-				printf("1 %d %d %c %s\n", p1.Head->processTime, p1.Head->number, p1.Head->type, p1.Head->vegetableToProcess);
-			else
-				printf("1 %d %d %c\n", p1.Head->processTime, p1.Head->number, p1.Head->type);
-			p1.Head = p1.Head->next;
-		}
-		else {
-			if(p2.Head->type != 'f')
-				printf("2 %d %d %c %s\n", p2.Head->processTime, p2.Head->number, p2.Head->type, p2.Head->vegetableToProcess);
-			else
-				printf("2 %d %d %c\n", p2.Head->processTime, p2.Head->number, p2.Head->type);
-			p2.Head = p2.Head->next;
-		}
-	}
+	
 
 	
 	// output file (players) opened with mode "w"
 	fout = fopen(PLAYER_FOUT, "w");
 	
+	fprintf(fout, "%d\n", countProcess);
+	while(p1.Head || p2.Head) {
+		if(p1.Head && p2.Head) {
+			if(p1.Head->processTime <= p2.Head->processTime) {
+				if(p1.Head->type != 'f')
+					fprintf(fout, "1 %d %d %c %s\n", p1.Head->processTime, p1.Head->number, p1.Head->type, p1.Head->vegetableToProcess);
+				else
+					fprintf(fout, "1 %d %d %c\n", p1.Head->processTime, p1.Head->number, p1.Head->type);
+				p1.Head = p1.Head->next;
+			}
+			else {
+				if(p2.Head->type != 'f')
+					fprintf(fout, "2 %d %d %c %s\n", p2.Head->processTime, p2.Head->number, p2.Head->type, p2.Head->vegetableToProcess);
+				else
+					fprintf(fout, "2 %d %d %c\n", p2.Head->processTime, p2.Head->number, p2.Head->type);
+				p2.Head = p2.Head->next;	
+			}
+		}
+		else if(p1.Head) {
+			if(p1.Head->type != 'f')
+				fprintf(fout, "1 %d %d %c %s\n", p1.Head->processTime, p1.Head->number, p1.Head->type, p1.Head->vegetableToProcess);
+			else
+				fprintf(fout, "1 %d %d %c\n", p1.Head->processTime, p1.Head->number, p1.Head->type);
+			p1.Head = p1.Head->next;
+		}
+		else {
+			if(p2.Head->type != 'f')
+				fprintf(fout, "2 %d %d %c %s\n", p2.Head->processTime, p2.Head->number, p2.Head->type, p2.Head->vegetableToProcess);
+			else
+				fprintf(fout, "2 %d %d %c\n", p2.Head->processTime, p2.Head->number, p2.Head->type);
+			p2.Head = p2.Head->next;
+		}
+	}
 	
 	fclose(fout);
 	
@@ -677,6 +679,8 @@ recipes* readRecipes() {
 		tempRecipes->book[i].other = 1 + j;
 	}
 	
+	fclose(fin);
+	
 	return tempRecipes;
 }
 
@@ -692,8 +696,6 @@ OrderContent* readOrder() {
 	OrderContent *order = (OrderContent*)malloc(numOfOrder * sizeof(OrderContent));
 	int i, j, k;
 	for(i = 0; i < numOfOrder; i++) {
-		order[i].Done = 0;
-		order[i].everDo = 0;
 		fscanf(fin, "%d", &order[i].number);
 		charBuff = fgetc(fin);
 		order[i].cook = NULL;
@@ -723,7 +725,6 @@ OrderContent* readOrder() {
 		charBuff = fgetc(fin);
 
 		fscanf(fin, "%d", &order[i].receiveTime);
-		order[i].CanOutTime = order[i].receiveTime;
 		charBuff = fgetc(fin);
 		fscanf(fin, "%d", &order[i].finishTime);
 		charBuff = fgetc(fin);
@@ -763,28 +764,6 @@ void freeOrder(OrderContent** order) {
 
 void initialPlayer(Player *p) {
 	p->Head = NULL;
-}
-
-void resetPlayer(Player *p) {
-	while(p->Head) {
-		Process *temp = p->Head;
-		p->Head = p->Head->next;
-		free(temp);
-	}
-}
-
-void initialProcessRecord(struct processRecord* ProcessRecord) {
-	ProcessRecord->cookTime = 0;
-	ProcessRecord->cutTime = 0;
-	ProcessRecord->BigStartIndex = 0;
-	ProcessRecord->BigEndIndex = 1;
-}
-
-void resetProcessRecord(struct processRecord* ProcessRecord) {
-	ProcessRecord->cookTime = 0;
-	ProcessRecord->cutTime = 0;
-	ProcessRecord->BigStartIndex = 0;
-	ProcessRecord->BigEndIndex = 1;
 }
 
 void orderOrder(OrderContent *orders, int num) {
