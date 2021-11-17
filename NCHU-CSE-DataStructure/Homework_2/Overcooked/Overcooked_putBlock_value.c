@@ -475,7 +475,6 @@ int main() {
 				Process *tempProcess = (Process*)malloc(sizeof(Process));
 				tempProcess->number = Order[i].number;
 				tempProcess->processTime = p2jc;
-				//printf("%d\n", p2jc);
 				p2jc += 3;
 				tempProcess->type = 'c';
 				strcpy(tempProcess->vegetableToProcess, temp->cookWhat);
@@ -559,6 +558,13 @@ int main() {
 		}
 	}
 	
+	/* free Blocks */
+	free(cookBlock);
+	free(cutBlock);
+	free(p1Block);
+	free(p2Block);
+	
+	
 	/* to count the number of process */
 	int countProcess = 0;
 	
@@ -624,6 +630,20 @@ int main() {
 	}
 	
 	fclose(fout);
+	
+	
+	/* free players process */
+	Process *tempProcess = NULL;
+	while(p1.Head) {
+		tempProcess = p1.Head;
+		p1.Head = p1.Head->next;
+		free(tempProcess); 
+	}
+	while(p2.Head) {
+		tempProcess = p2.Head;
+		p2.Head = p2.Head->next;
+		free(tempProcess); 
+	}
 	
 	/* free Recipes */
 	free(Recipes->book);
