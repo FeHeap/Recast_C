@@ -3,8 +3,8 @@
 #include <ctype.h>
 #include <string.h>
 
-#define INPUT_FILE "input_1.txt"
-#define OUTPUT_FILE "output_1.txt"
+#define INPUT_FILE "input_1_2.txt"
+#define OUTPUT_FILE "output_1_2.txt"
 #define TRUE 1
 #define byte char
 
@@ -65,7 +65,6 @@ int main() {
 		lnBuff = fgetc(fin);	// buff '\n'
 		lines++;	
 	} while(lnBuff != EOF);
-	lines -= 2;
 	rewind(fin);
 	
 	printf("Comversing inorder formulas to preorder...\n");
@@ -73,9 +72,18 @@ int main() {
 	// read the formulas in INPUT_FILE, and write the preorder of formulas in OUTPUT_FILE
 	int i;
 	for(i = 0; i < lines; i++) {
+		// initialize FormulaBuff
+		FormulaBuff[0] = '\0';
+		
 		// read the formula in INPUT_FILE, and store it into FormulaBuff
 		fscanf(fin, "%[^\n]", FormulaBuff);
 		lnBuff = fgetc(fin);	// buff '\n'
+		
+		// if space line, fprintf '\n'
+		if(strlen(FormulaBuff) == 0) {
+			fprintf(fout, "\n");
+			continue;
+		}
 		
 		// converse the data in FormulaBuff to linked list(stack, head point to the top of stack)
 		Unit *Head = structUpFormula(FormulaBuff);
@@ -108,7 +116,6 @@ int main() {
 		}
 		fprintf(fout, "\n");
 	}
-	fprintf(fout, "\n\n");
 	
 	
 	// close files
