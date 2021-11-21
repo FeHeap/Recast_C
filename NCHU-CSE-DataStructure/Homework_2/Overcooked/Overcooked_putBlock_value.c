@@ -12,9 +12,9 @@ FILE *fin, *fout;
 typedef struct cookingTime {
 	char dish[35];
 	int cook;
-	char cookWhat[5][15];
+	char cookWhat[10][15];
 	int cut;
-	char cutWhat[5][15];
+	char cutWhat[10][15];
 	int other;
 } CookingTime;
 
