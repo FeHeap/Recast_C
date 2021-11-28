@@ -63,6 +63,7 @@ int main() {
 		if(times != 1) {
 			fprintf(fout, "\n");
 		}
+
 		fprintf(fout, "# %d", times);
 		
 		Node *root = NULL;
