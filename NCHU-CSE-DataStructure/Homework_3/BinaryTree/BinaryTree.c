@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define INPUT_FILE "test_case_1-1/input_1.txt" 
-#define OUTPUT_FILE "output_1.txt"
+#include <ctype.h>
+#define INPUT_FILE "test_case_1-4/input_1.txt" 
+#define OUTPUT_FILE "test_case_1-4/output_1.txt"
 #define TRUE 1
 
 
@@ -59,8 +60,10 @@ int main() {
 		if(initialNumOfNodes == 0 && numOfInst == 0) {
 			break;
 		}
-		
-		printf("# %d\n", times);
+		if(times != 1) {
+			fprintf(fout, "\n");
+		}
+		fprintf(fout, "# %d", times);
 		
 		Node *root = NULL;
 		
@@ -69,6 +72,9 @@ int main() {
 			fscanf(fin, "%d", &valueBuff);
 			charBuff = fgetc(fin);
 			insertNodei(&root, valueBuff);
+		}
+		if(initialNumOfNodes == 0) {
+			charBuff = fgetc(fin);
 		}
 		
 		char instBuff[20];
@@ -81,11 +87,11 @@ int main() {
 		freeATree(&root);
 	}
 	
-	
-	
 	// close files
 	fclose(fin);
 	fclose(fout);
+	
+	printf("Finish, and have store the outcome into %s.\n", OUTPUT_FILE);
 	
 	system("PAUSE");
 	return 0;
@@ -276,12 +282,112 @@ void queryNode(Node **rootPoint, char *data) {
 		}
 	}
 	if(stage > 0) {
-		printf("%d\n", stage);
+		fprintf(fout, "\n%d", stage);
 	}
 }
 
 void printMaxSum(Node **rootPoint, char *data) {
-
+	int  i = 0;
+	while(!isspace(data[i++]));
+	int v1 = strToInt(data), v2 = strToInt(&data[i]);
+	Node *commonRoot = *rootPoint;
+	int validFlag = 1;
+	while(TRUE) {
+		if(commonRoot->value < v1 && commonRoot->value < v2) {
+			if(commonRoot->rightNode) {
+				commonRoot= commonRoot->rightNode;
+			}
+			else {
+				validFlag = 0;
+				break;
+			}
+		}
+		else if(commonRoot->value > v1 && commonRoot->value > v2) {
+			if(commonRoot->leftNode) {
+				commonRoot= commonRoot->leftNode;
+			}
+			else {
+				validFlag = 0;
+				break;
+			}
+		}
+		else {
+			break;
+		}
+	}	
+	if(validFlag == 0) {
+		return;
+	}
+	
+	int v1PathSum = 0, v2PathSum = 0;
+	Node *point = commonRoot;
+	while(TRUE) {
+		if(point->value > 0) {
+			v1PathSum += point->value;
+		}
+		if(point->value > v1) {
+			if(point->leftNode) {
+				point = point->leftNode;
+			}
+			else {
+				validFlag = 0;
+				break;
+			}
+		}
+		else if(point->value < v1) {
+			if(point->rightNode) {
+				point = point->rightNode;
+			}
+			else {
+				validFlag = 0;
+				break;
+			}
+		}
+		else {
+			break;
+		}
+	}
+	if(validFlag == 0) {
+		return;
+	}
+	
+	point = commonRoot;
+	while(TRUE) {
+		if(point->value > 0) {
+			v2PathSum += point->value;
+		}
+		if(point->value > v2) {
+			if(point->leftNode) {
+				point = point->leftNode;
+			}
+			else {
+				validFlag = 0;
+				break;
+			}
+		}
+		else if(point->value < v2) {
+			if(point->rightNode) {
+				point = point->rightNode;
+			}
+			else {
+				validFlag = 0;
+				break;
+			}
+		}
+		else {
+			break;
+		}
+	}
+	if(validFlag == 0) {
+		return;
+	}
+	
+	int maxSum = v1PathSum + v2PathSum;
+	if(commonRoot->value > 0) {
+		maxSum -= commonRoot->value;
+	}
+	
+	fprintf(fout, "\n%d", maxSum);
 }
 
 
@@ -315,7 +421,7 @@ void freeATree(Node **root) {
 	for(i = 0; i < size; i++) {
 		NodeStack[i] = NULL;
 	}
-	printf("\n");
+	
 	int top = 0;
 	NodeStack[0] = *root;
 	do {
@@ -323,7 +429,6 @@ void freeATree(Node **root) {
 		
 		if(point->leftNode) {
 			if(point->leftNode->leftNode == NULL && point->leftNode->rightNode == NULL) {
-				printf("%d ", point->leftNode->value);
 				free(point->leftNode);
 				point->leftNode = NULL;
 			}
@@ -345,7 +450,6 @@ void freeATree(Node **root) {
 		
 		if(point->rightNode) {
 			if(point->rightNode->leftNode == NULL && point->rightNode->rightNode == NULL) {
-				printf("%d ", point->rightNode->value);
 				free(point->rightNode);
 				point->rightNode = NULL;
 			}
@@ -369,7 +473,6 @@ void freeATree(Node **root) {
 	
 
 	free(NodeStack);
-	printf("%d\n", (*root)->value);
 	free(*root);	
 	*root = NULL;
 }
