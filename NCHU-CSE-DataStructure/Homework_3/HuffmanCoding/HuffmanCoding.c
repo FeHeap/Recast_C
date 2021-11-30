@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define INPUT_FILE "test_case_1-4/input_1.txt" 
+#define INPUT_FILE "test_case_2-2/input_2.txt" 
 #define TRUE 1
 #define NumOfCharType 128
 FILE *fin;
@@ -35,10 +35,13 @@ int main() {
 		if(numOfLines == 0) {
 			break;
 		}
-		
-		int *charOccurNum = (int*)calloc(0, NumOfCharType * sizeof(int));
-		
 		int i;
+		int *charOccurNum = (int*)calloc(NumOfCharType, sizeof(int));
+//		printf("\n***\n");
+//		for(i = 0; i < NumOfCharType; i++) {
+//			printf("%d ", charOccurNum[i]);
+//		}
+//		printf("\n***\n");
 		for(i = 0; i < numOfLines; i++) {
 			while((charBuff = fgetc(fin)) != '\n') {
 				charOccurNum[charBuff] += 1;
@@ -79,7 +82,7 @@ int main() {
 		int *bitNumOfOccurChar = (int*)calloc(0, NumOfCharType * sizeof(int));
 		
 		while(top != 2) {
-			HeapUnit minSet1 = charOccurHeap[1];
+			HeapUnit minSet_1 = charOccurHeap[1];
 			charOccurHeap[1] = charOccurHeap[--top];
 			int point = 1;
 			while(TRUE) {
@@ -89,7 +92,7 @@ int main() {
 						HeapUnit temp = *toChange;
 						*toChange = charOccurHeap[point];
 						charOccurHeap[point] = temp;
-						point = (int)((toChange - charOccurHeap) / sizeof(HeapUnit));
+						point = (int)(toChange - charOccurHeap);
 					}
 					else {
 						break;
@@ -111,9 +114,9 @@ int main() {
 				}
 			}
 			
-			HeapUnit minSet2 = charOccurHeap[1];
+			HeapUnit minSet_2 = charOccurHeap[1];
 			charOccurHeap[1] = charOccurHeap[--top];
-			int point = 1;
+			point = 1;
 			while(TRUE) {
 				if(point * 2 + 1 < top) {
 					if(charOccurHeap[point].sumOfNum > charOccurHeap[point * 2].sumOfNum || charOccurHeap[point].sumOfNum > charOccurHeap[point * 2 + 1].sumOfNum) {
@@ -121,7 +124,7 @@ int main() {
 						HeapUnit temp = *toChange;
 						*toChange = charOccurHeap[point];
 						charOccurHeap[point] = temp;
-						point = (int)((toChange - charOccurHeap) / sizeof(HeapUnit));
+						point = (int)(toChange - charOccurHeap);
 					}
 					else {
 						break;
@@ -143,11 +146,48 @@ int main() {
 				}
 			}
 			
+//			for(i = 1; i < top; i++) {
+//				printf("%d ", charOccurHeap[i].sumOfNum);
+//			}
+//			printf("\n");
 			
-				
+			minSet_1.sumOfNum += minSet_2.sumOfNum;
+			CharType *pointCharType = minSet_1.types;
+			while(pointCharType->next != NULL) {
+				bitNumOfOccurChar[pointCharType->whichChar]++;
+				pointCharType = pointCharType->next;
+			}
+			bitNumOfOccurChar[pointCharType->whichChar]++;
+			pointCharType->next = minSet_2.types;
+			pointCharType = pointCharType->next;
+			while(pointCharType != NULL) {
+				bitNumOfOccurChar[pointCharType->whichChar]++;
+				pointCharType = pointCharType->next;
+			}
+			
+			charOccurHeap[top++] = minSet_1;
+			point = top - 1;
+			while(point > 1) {
+				if(charOccurHeap[point].sumOfNum < charOccurHeap[point/2].sumOfNum) {
+					HeapUnit temp = charOccurHeap[point];
+					charOccurHeap[point] = charOccurHeap[point/2];
+					charOccurHeap[point/2] = temp;
+					point /= 2;
+				}
+				else {
+					break;
+				}
+			}
+			
 		}
 		
 		free(charOccurNum);
+		CharType *pointCharType = charOccurHeap[1].types;
+		while(pointCharType != NULL) {
+			CharType *temp = pointCharType;
+			pointCharType = pointCharType->next;
+			free(temp);
+		}
 		free(charOccurHeap);
 		free(bitNumOfOccurChar);
 	}
