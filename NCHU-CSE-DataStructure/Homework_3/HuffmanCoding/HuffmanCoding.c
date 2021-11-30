@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#define INPUT_FILE "test_case_2-2/input_2.txt" 
+#define INPUT_FILE "test_case_2-3/input_2.txt" 
 #define TRUE 1
 #define NumOfCharType 128
+
 FILE *fin;
 
 typedef struct charType {
@@ -16,6 +17,10 @@ typedef struct heapUnit {
 	CharType *types;
 } HeapUnit;
 
+typedef struct bitTable {
+	int *table;
+	struct bitTable *next;
+} BitTable;
 
 int main() {
 	
@@ -27,6 +32,10 @@ int main() {
 
 	printf("Processing data...\n");
 	
+	
+	/* get bit tables */
+	BitTable *front, *rear;
+	front = rear = NULL;
 	int numOfLines;
 	char charBuff;
 	while(TRUE) {
@@ -35,13 +44,10 @@ int main() {
 		if(numOfLines == 0) {
 			break;
 		}
+		
 		int i;
 		int *charOccurNum = (int*)calloc(NumOfCharType, sizeof(int));
-//		printf("\n***\n");
-//		for(i = 0; i < NumOfCharType; i++) {
-//			printf("%d ", charOccurNum[i]);
-//		}
-//		printf("\n***\n");
+
 		for(i = 0; i < numOfLines; i++) {
 			while((charBuff = fgetc(fin)) != '\n') {
 				charOccurNum[charBuff] += 1;
@@ -79,7 +85,7 @@ int main() {
 			}
 		}
 		
-		int *bitNumOfOccurChar = (int*)calloc(0, NumOfCharType * sizeof(int));
+		int *bitNumOfOccurChar = (int*)calloc(NumOfCharType, sizeof(int));
 		
 		while(top != 2) {
 			HeapUnit minSet_1 = charOccurHeap[1];
@@ -146,11 +152,6 @@ int main() {
 				}
 			}
 			
-//			for(i = 1; i < top; i++) {
-//				printf("%d ", charOccurHeap[i].sumOfNum);
-//			}
-//			printf("\n");
-			
 			minSet_1.sumOfNum += minSet_2.sumOfNum;
 			CharType *pointCharType = minSet_1.types;
 			while(pointCharType->next != NULL) {
@@ -178,7 +179,18 @@ int main() {
 					break;
 				}
 			}
-			
+		}
+		
+		if(front == NULL) {
+			front = rear = (BitTable*)malloc(sizeof(BitTable));
+			rear->table = bitNumOfOccurChar;
+			rear->next = NULL;
+		}
+		else {
+			rear->next = (BitTable*)malloc(sizeof(BitTable));
+			rear = rear->next;
+			rear->table = bitNumOfOccurChar;
+			rear->next = NULL;
 		}
 		
 		free(charOccurNum);
@@ -189,8 +201,37 @@ int main() {
 			free(temp);
 		}
 		free(charOccurHeap);
-		free(bitNumOfOccurChar);
 	}
+	
+	rewind(fin);
+	
+	printf("Outcome:\n");
+	
+	/* count bit cost in data, and print out */
+	while(TRUE) {
+		fscanf(fin, "%d", &numOfLines);
+		charBuff = fgetc(fin);
+		if(numOfLines == 0) {
+			break;
+		}
+		
+		int *table = front->table;
+		BitTable *tempBitTable = front;
+		front = front->next;
+		free(tempBitTable);
+		int i;
+		int countBits = 0;
+		for(i = 0; i < numOfLines; i++) {
+			while((charBuff = fgetc(fin)) != '\n') {
+				countBits += table[charBuff];
+			}
+		}
+		printf("%d\n", countBits);
+		free(table);
+	}
+	
+	// close file
+	fclose(fin);
 	
 	system("PAUSE");
 	return 0;
