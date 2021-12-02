@@ -112,9 +112,44 @@ void instructionProcess(Block* blocks, int numOfBlocks, char *instruction) {
 	}
 }
 
+int strToInt(char *str) {
+	int returnInt = 0;	
+	int i;
+	for(i = 0; TRUE; i++) {
+		if(isspace(str[i]) || str[i] == '\0') {
+			break;
+		}
+		returnInt *= 10;
+		returnInt += (str[i] - '0');
+	}
+	return returnInt;
+}
+
 void query(Block* blocks, int numOfBlocks, char *instruction) {
 	
 }
+
 void paint(Block* blocks, int numOfBlocks, char *instruction) {
+	int left = strToInt(instruction);
+	int  i = 0;
+	while(!isspace(instruction[i++]));
+	int right = strToInt(instruction + i);
+	while(!isspace(instruction[i++]));
+	char color = instruction[i];
 	
+	int leftBlock = left / numOfBlocks;
+	int rightBlock = right / numOfBlocks;
+	
+	if(leftBlock == rightBlock) {
+		
+	}
+	else {
+		for(i = leftBlock + 1; i < rightBlock; i++) {
+			blocks[i].contain[0] = color;
+			blocks[i].contain[1] = '\0';
+			blocks[i].indexOfColors[1] = blocks[i].end;
+		}
+	}
 }
+
+
