@@ -1,0 +1,16 @@
+15
+cake dough,egg strawberry cream
+cake_2 dough,egg chocolate cream
+corn_bisque water,egg corn x
+french_fries potato x x
+fruit_platter x orange,peach,grape x
+hamburger beef lettuce,tomato cheese,bread
+hamburger_2 beef pineapple cheese,break
+kebab beef tomato,mushroom x
+pizza dough tomato,cheese x
+sashimi x fish x
+salad x lettuce,tomato,cucumber x
+spaghetti x tomato noodle
+spaghetti_2 butter,chicken mushroom noodle
+sushi rice fish nori
+sushi_2 rice cucumber nori
