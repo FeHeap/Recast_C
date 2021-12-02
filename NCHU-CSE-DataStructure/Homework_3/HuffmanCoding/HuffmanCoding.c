@@ -32,10 +32,8 @@ int main() {
 
 	printf("Processing data...\n");
 	
+	printf("Outcome:\n");
 	
-	/* get bit tables */
-	BitTable *front, *rear;
-	front = rear = NULL;
 	int numOfLines;
 	char charBuff;
 	while(TRUE) {
@@ -181,19 +179,14 @@ int main() {
 			}
 		}
 		
-		if(front == NULL) {
-			front = rear = (BitTable*)malloc(sizeof(BitTable));
-			rear->table = bitNumOfOccurChar;
-			rear->next = NULL;
+		int countBits = 0;
+		for(i = 0; i < NumOfCharType; i++) {
+			countBits += (bitNumOfOccurChar[i] * charOccurNum[i]);
 		}
-		else {
-			rear->next = (BitTable*)malloc(sizeof(BitTable));
-			rear = rear->next;
-			rear->table = bitNumOfOccurChar;
-			rear->next = NULL;
-		}
+		printf("%d\n", countBits);
 		
 		free(charOccurNum);
+		free(bitNumOfOccurChar);
 		CharType *pointCharType = charOccurHeap[1].types;
 		while(pointCharType != NULL) {
 			CharType *temp = pointCharType;
@@ -201,33 +194,6 @@ int main() {
 			free(temp);
 		}
 		free(charOccurHeap);
-	}
-	
-	rewind(fin);
-	
-	printf("Outcome:\n");
-	
-	/* count bit cost in data, and print out */
-	while(TRUE) {
-		fscanf(fin, "%d", &numOfLines);
-		charBuff = fgetc(fin);
-		if(numOfLines == 0) {
-			break;
-		}
-		
-		int *table = front->table;
-		BitTable *tempBitTable = front;
-		front = front->next;
-		free(tempBitTable);
-		int i;
-		int countBits = 0;
-		for(i = 0; i < numOfLines; i++) {
-			while((charBuff = fgetc(fin)) != '\n') {
-				countBits += table[charBuff];
-			}
-		}
-		printf("%d\n", countBits);
-		free(table);
 	}
 	
 	// close file
