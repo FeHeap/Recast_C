@@ -1,11 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <ctype.h>
 #define INPUT_FILE "test_case_3-1/input_3.txt"
 #define OUTPUT_FILE "output_3.txt"
 #define TRUE 1
 
 FILE *fin, *fout;
+
+typedef struct block {
+	int end;
+	char *contain;
+	int *indexOfColors;
+} Block;
+
+void instructionProcess(Block*, int, char*);
 
 int main() {
 	
@@ -37,19 +46,75 @@ int main() {
 	char charBuff;
 	fscanf(fin, "%d",&wallLength);
 	charBuff = fgetc(fin);
+	int numOfBlocks = (sqrt(wallLength) > (int)sqrt(wallLength))? ((int)sqrt(wallLength) + 1) : (int)sqrt(wallLength);
+	Block *blocks = (Block*)malloc(numOfBlocks * sizeof(Block));
+	int i;
+	for(i = 0; i < numOfBlocks; i++) {
+		blocks[i].end = (((i+1) * numOfBlocks) < wallLength)? ((i+1) * numOfBlocks) : wallLength;
+		blocks[i].contain = (char*)malloc(2 * numOfBlocks * sizeof(char));
+		blocks[i].indexOfColors = (int*)malloc((2 + numOfBlocks) * sizeof(int));
+	}
+	
+	strcpy(blocks[0].contain, "_");
+	blocks[0].indexOfColors[0] = 0;
+	blocks[0].indexOfColors[i] = numOfBlocks;
+	for(i = 1; i < numOfBlocks; i++) {
+		if(indexOfColors[0] < wallLength) {
+			strcpy(blocks[i].contain, "_");
+		}
+		else {
+			blocks[i].contain[0] = '\0';
+		}
+		blocks[i].indexOfColors[0] = blocks[i-1].indexOfColors[1];
+		blocks[i].indexOfColors[1] = blocks[i].end;
+	}
+	
 	fscanf(fin, "%d", &numOfInst);
 	charBuff = fgetc(fin);
 	
 	char instBuff[40];
-	int i;
 	for(i = 0; i < numOfInst; i++) {
 		fscanf(fin, "%[^\n]", instBuff);
 		charBuff = fgetc(fin);
 	}
+	
+	
+	for(i = 0; i < numOfBlocks; i++) {
+		free(blocks[i].contain);
+		free(blocks[i].indexOfColors);
+	}
+	free(blocks);
 	
 	// close files
 	fclose(fin);
 	fclose(fout);
 	
 	return 0;
+}
+
+void query(Block*, int, char*);
+void paint(Block*, int, char*);
+
+void instructionProcess(Block* blocks, int numOfBlocks, char *instruction) {
+	int  i = 0;
+	while(!isspace(instruction[i++]));
+	switch(instruction[0]) {
+		case 'Q':
+			//printf("Q\n");
+			query(blocks, numOfBlocks, &instruction[i]);
+			break;
+		case 'P':
+			//printf("P\n");
+			paint(blocks, numOfBlocks, &instruction[i]);
+			break;
+		default: // pass
+			break;
+	}
+}
+
+void query(Block* blocks, int numOfBlocks, char *instruction) {
+	
+}
+void paint(Block* blocks, int numOfBlocks, char *instruction) {
+	
 }
