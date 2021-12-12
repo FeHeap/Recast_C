@@ -194,23 +194,11 @@ void paintColor(TreeNode *root, int left_p, int right_p, char color) {
 		}
 		root->downFlag = 1;
 		int mid = (root->left_bound + root->right_bound) / 2;
-		char event = 0;
 		if(root->left_bound <= left_p && left_p <= mid || root->left_bound <= right_p && right_p <= mid || left_p <= root->left_bound && mid <= right_p) {
 			paintColor(root->left, left_p, right_p, color);
-			event += 'l';
 		}
 		if(mid+1 <= right_p && right_p <= root->right_bound || mid+1 <= left_p && left_p <= root->right_bound || left_p <= mid+1 && root->right_bound <= right_p) {
 			paintColor(root->right, left_p, right_p, color);
-			event += 'r';
-		}
-		
-		if(nowDownFlag == 0) {
-			if(event == 'l') {
-				paintColor(root->right, left_p, right_p, root->color);
-			}
-			else if(event == 'r') {
-				paintColor(root->left, left_p, right_p, root->color);
-			}
 		}
 	}
 }
