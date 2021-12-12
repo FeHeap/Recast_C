@@ -8,8 +8,6 @@
 
 FILE *fin, *fout;
 
-
-
 typedef struct treeNode {
 	int left_bound, right_bound;
 	char color;
@@ -46,7 +44,7 @@ int main() {
 	// output file opened with mode "w"
 	fout = fopen(OUTPUT_FILE, "w");
 	
-	
+	printf("Processing data ..\n");
 	
 	int wallLength;
 	int numOfInst;
@@ -54,6 +52,7 @@ int main() {
 	fscanf(fin, "%d", &wallLength);
 	charBuff = fgetc(fin);
 	
+	// build clean Segment tree
 	TreeNode *root = buildNewTree(0, wallLength);
 	
 	
@@ -61,15 +60,15 @@ int main() {
 	charBuff = fgetc(fin);
 	char instBuff[30];
 	int i;
-
+	
+	/* process instructions */
 	for(i = 0; i < numOfInst; i++) {
 		fscanf(fin, "%[^\n]", instBuff);
-		//printf("%d %s\n", i, instBuff);
 		charBuff = fgetc(fin);
 		instructionProcess(root, instBuff);
 	}
 	
-	
+	// free tree
 	freeTree(root);
 	root = NULL;
 	
@@ -77,9 +76,12 @@ int main() {
 	fclose(fin);
 	fclose(fout);
 	
+	printf("Finish and output to %s\n", OUTPUT_FILE);
+	
 	return 0;
 }
 
+/* build clean Segment tree */
 TreeNode* buildNewTree(int left_bound, int right_bound) {
 	TreeNode *Node = (TreeNode*)malloc(sizeof(TreeNode));
 	Node->left_bound = left_bound;
@@ -96,6 +98,7 @@ TreeNode* buildNewTree(int left_bound, int right_bound) {
 	return Node;
 }
 
+/* free tree */
 void freeTree(TreeNode *Node) {
 	if(Node->left == NULL && Node->left == NULL) {
 		free(Node);
@@ -109,17 +112,7 @@ void freeTree(TreeNode *Node) {
 void query(TreeNode*, char*);
 void paint(TreeNode*, char*);
 
-void printTree(TreeNode *root) {
-	if(root->downFlag == 1) {
-		printTree(root->left);
-		printTree(root->right);
-	}
-	else {
-		printf("%d%c%d ", root->left_bound, root->color, root->right_bound);	
-	}
-	
-}
-
+/* process instruction */
 void instructionProcess(TreeNode *root, char *instruction) {
 	int  i = 0;
 	while(!isspace(instruction[i++]));
@@ -149,18 +142,18 @@ int strToInt(char *str) {
 	return returnInt;
 }
 
-
-char rightState = 0;
+/* query */
+char leftState = 0; // To detect whether it's the first word to be printed. If it is, leftState == 0, else leftState == 1; 
 void queryColor(TreeNode *root, int left_q, int right_q) {
 	if(root->downFlag == 0) {
-		if(rightState == 0) {
+		if(leftState == 0) {
 			fprintf(fout, "%c", root->color);
-			rightState = root->color;
+			leftState = root->color;
 		}
 		else {
-			if(rightState != root->color) {
+			if(leftState != root->color) {
 				fprintf(fout, " %c", root->color);
-				rightState = root->color;
+				leftState = root->color;
 			}
 		}
 	}
@@ -174,18 +167,18 @@ void queryColor(TreeNode *root, int left_q, int right_q) {
 		}
 	}
 }
-
 void query(TreeNode *root, char *instruction) {
 	int left_q, right_q;
 	left_q = strToInt(instruction);
 	int  i = 0;
 	while(!isspace(instruction[i++]));
 	right_q = strToInt(instruction+i);
-	rightState = 0;
+	leftState = 0;
 	queryColor(root, left_q, right_q);
 	fprintf(fout, "\n");
 }
 
+/* paint */
 void paintColor(TreeNode *root, int left_p, int right_p, char color) {
 	if(left_p <= root->left_bound && root->right_bound <= right_p || left_p > root->right_bound || right_p < root->left_bound) {
 		root->color = color;
@@ -221,7 +214,6 @@ void paintColor(TreeNode *root, int left_p, int right_p, char color) {
 		}
 	}
 }
-
 void paint(TreeNode *root, char *instruction) {
 	int left_p, right_p;
 	left_p = strToInt(instruction);
