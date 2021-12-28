@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #define INPUT_FILE "test_case_3-1/input_3.txt" 
 
 FILE *fin;
@@ -23,6 +24,7 @@ typedef struct colorBucket {
 
 void shellSortConvertUnits(ConvertUnit*, int);
 void shellSortColorBuckets(ColorBucket*, int);
+int countLeastCost(Node*, int, ColorBucket*, int);
 
 int main() {
 	// input file opened with mode "r"
@@ -143,6 +145,9 @@ int main() {
 	*/
 	
 	
+	int leastCost = countLeastCost(Nodes, numOfNodes, ColorBuckets, numOfColorBeUsed);
+	printf("Least Cost: %d\n", leastCost);
+	
 	// free all dynamic memory
 	free(ColorBuckets);
 	for(i = 1; i <= numOfNodes; i++) {
@@ -203,3 +208,103 @@ void shellSortColorBuckets(ColorBucket *ColorBuckets, int size) {
     }
 }
 
+struct countManager {
+	int LeastCost;
+	Node *Nodes;
+	int numOfNode;
+	ColorBucket *ColorBuckets;
+	int numOfColorBucket;
+	
+	int *paintingFlags;
+} CountManager;
+int costBuff = 0;
+void costCount(int numOfArea, int colorDraw) {
+	printf("%d,  cost:%d\n", colorDraw, costBuff);
+	int *stack = (int*)malloc(CountManager.numOfNode * sizeof(int));
+	int top = 0;
+	int i, j;
+	for(i = 1; i <= CountManager.numOfNode; i++) {
+		printf("---------------%d, %d\n", CountManager.ColorBuckets[colorDraw].capacity, CountManager.Nodes[i].area);
+		if(CountManager.ColorBuckets[colorDraw].capacity >= CountManager.Nodes[i].area) {
+			if(CountManager.paintingFlags[i] == 0) {
+				int flag = 1;
+				for(j = 0; j < top; j++) {
+					if(CountManager.Nodes[stack[j]].neighbour[i] == 1) {
+						flag = 0;
+						break;
+					}
+				}
+				if(flag) {
+					printf(":%d:\n", i);
+					stack[top++] = i;
+					CountManager.ColorBuckets[colorDraw].capacity -= CountManager.Nodes[i].area;
+					costBuff += CountManager.Nodes[i].area * CountManager.ColorBuckets[colorDraw].cost;
+					printf("cost:%d   ", costBuff);
+					CountManager.paintingFlags[i] = 1;
+					numOfArea--;
+					for(j = 1; j <= CountManager.numOfNode; j++) {
+						if(CountManager.paintingFlags[j] == 1) {
+							printf("%d ", CountManager.Nodes[j].area);
+						}
+					}
+					printf("\n");
+					if(numOfArea == 0) {
+						if(costBuff < CountManager.LeastCost) {
+							CountManager.LeastCost = costBuff;
+						}
+						break;
+					}
+				}
+			}
+		}
+		else {
+			
+			if(top == 0) {
+				break;
+			}
+			else {
+				if(colorDraw + 1 < CountManager.numOfColorBucket) {
+					costCount(numOfArea, colorDraw + 1);
+					CountManager.ColorBuckets[colorDraw].capacity += CountManager.Nodes[stack[--top]].area;
+					costBuff -= CountManager.Nodes[stack[top]].area * CountManager.ColorBuckets[colorDraw].cost;
+					CountManager.paintingFlags[stack[top]] = 0;
+					i = stack[top];
+					numOfArea++;
+				} else {
+					break;
+				}
+			}
+		}
+	}
+	
+	printf("%d %d %d\n", i, colorDraw + 1, CountManager.numOfColorBucket);
+	if(colorDraw + 1 < CountManager.numOfColorBucket && i == CountManager.numOfNode) {
+		costCount(numOfArea, colorDraw + 1);
+	}
+		
+	for(j = 0; j < top; j++) {
+		CountManager.paintingFlags[stack[j]] = 0;
+		CountManager.ColorBuckets[colorDraw].capacity += CountManager.Nodes[stack[j]].area;
+		costBuff -= CountManager.Nodes[stack[j]].area * CountManager.ColorBuckets[colorDraw].cost;
+	}
+	
+	
+	
+	
+	free(stack);
+}
+int countLeastCost(Node *Nodes, int numOfNode, ColorBucket *ColorBuckets, int numOfColorBucket) {
+	printf("Nodes:%d\n", numOfNode);
+	CountManager.paintingFlags = (int*)calloc(numOfNode+1, sizeof(int));
+	CountManager.LeastCost = INT_MAX;
+	CountManager.Nodes = Nodes;
+	CountManager.numOfNode = numOfNode;
+	CountManager.ColorBuckets = ColorBuckets;
+	CountManager.numOfColorBucket = numOfColorBucket;
+	costCount(numOfNode, 0);
+	
+	free(CountManager.paintingFlags);
+	CountManager.paintingFlags = NULL;
+	
+	return CountManager.LeastCost;
+}
