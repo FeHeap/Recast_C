@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#define INPUT_FILE "test_case_3-1/input_3.txt" 
+#define INPUT_FILE "test_case_3-2/input_3.txt" 
 
 FILE *fin;
 
@@ -222,9 +222,10 @@ void costCount(int numOfArea, int colorDraw) {
 	printf("%d,  cost:%d\n", colorDraw, costBuff);
 	int *stack = (int*)malloc(CountManager.numOfNode * sizeof(int));
 	int top = 0;
+	int topFlag = 0;
 	int i, j;
 	for(i = 1; i <= CountManager.numOfNode; i++) {
-		printf("---------------%d, %d\n", CountManager.ColorBuckets[colorDraw].capacity, CountManager.Nodes[i].area);
+		//printf("---------------%d, %d\n", CountManager.ColorBuckets[colorDraw].capacity, CountManager.Nodes[i].area);
 		if(CountManager.ColorBuckets[colorDraw].capacity >= CountManager.Nodes[i].area) {
 			if(CountManager.paintingFlags[i] == 0) {
 				int flag = 1;
@@ -236,18 +237,20 @@ void costCount(int numOfArea, int colorDraw) {
 				}
 				if(flag) {
 					printf(":%d:\n", i);
+					topFlag = 1;
 					stack[top++] = i;
 					CountManager.ColorBuckets[colorDraw].capacity -= CountManager.Nodes[i].area;
 					costBuff += CountManager.Nodes[i].area * CountManager.ColorBuckets[colorDraw].cost;
-					printf("cost:%d   ", costBuff);
+					//printf("cost:%d   ", costBuff);
 					CountManager.paintingFlags[i] = 1;
 					numOfArea--;
+					/*
 					for(j = 1; j <= CountManager.numOfNode; j++) {
 						if(CountManager.paintingFlags[j] == 1) {
 							printf("%d ", CountManager.Nodes[j].area);
 						}
 					}
-					printf("\n");
+					printf("\n");*/
 					if(numOfArea == 0) {
 						if(costBuff < CountManager.LeastCost) {
 							CountManager.LeastCost = costBuff;
@@ -277,8 +280,7 @@ void costCount(int numOfArea, int colorDraw) {
 		}
 	}
 	
-	printf("%d %d %d\n", i, colorDraw + 1, CountManager.numOfColorBucket);
-	if(colorDraw + 1 < CountManager.numOfColorBucket && i == CountManager.numOfNode) {
+	if(colorDraw + 1 < CountManager.numOfColorBucket && i == CountManager.numOfNode + 1 && ((top != 0 && topFlag == 1) || (top == 0 && topFlag == 0))) {
 		costCount(numOfArea, colorDraw + 1);
 	}
 		
@@ -287,9 +289,6 @@ void costCount(int numOfArea, int colorDraw) {
 		CountManager.ColorBuckets[colorDraw].capacity += CountManager.Nodes[stack[j]].area;
 		costBuff -= CountManager.Nodes[stack[j]].area * CountManager.ColorBuckets[colorDraw].cost;
 	}
-	
-	
-	
 	
 	free(stack);
 }
